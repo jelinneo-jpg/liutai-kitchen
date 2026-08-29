@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>刘太厨房</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
+    background: #fff8f2;
+    color: #3d2b24;
+}
+
+header {
+    background: #f6c7a8;
+    padding: 28px 20px;
+    text-align: center;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 30px;
+}
+
+header p {
+    margin: 8px 0 0;
+    color: #76564a;
+}
+
+nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px;
+    background: white;
+}
+
+nav button {
+    border: none;
+    padding: 10px 16px;
+    border-radius: 20px;
+    background: #fff0e5;
+    color: #8b5437;
+}
+
+nav button.active {
+    background: #e89a68;
+    color: white;
+}
+
+main {
+    max-width: 650px;
+    margin: auto;
+    padding: 15px;
+}
+
+.card {
+    background: white;
+    border-radius: 20px;
+    padding: 18px;
+    margin-bottom: 15px;
+    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+}
+
+.food {
+    font-size: 45px;
+}
+
+h2 {
+    margin-top: 5px;
+}
+
+.tag {
+    display: inline-block;
+    background: #fff0e5;
+    color: #9b603e;
+    padding: 5px 9px;
+    border-radius: 10px;
+    font-size: 13px;
+}
+
+button.order {
+    border: none;
+    background: #e89a68;
+    color: white;
+    padding: 11px 18px;
+    border-radius: 14px;
+    font-weight: bold;
+}
+
+button.remove {
+    border: none;
+    background: #eee;
+    padding: 8px 12px;
+    border-radius: 12px;
+}
+
+.hidden {
+    display: none;
+}
+
+.empty {
+    text-align: center;
+    padding: 40px;
+    color: #987d70;
+}
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>🍳 刘太厨房</h1>
+    <p>一家人的点菜 · 食谱 · 今日菜单</p>
+</header>
+
+<nav>
+    <button class="active" onclick="showPage('order', this)">🍽️ 点菜</button>
+    <button onclick="showPage('today', this)">📋 今日菜单</button>
+    <button onclick="showPage('recipe', this)">📖 食谱</button>
+</nav>
+
+<main>
+
+<section id="order">
+
+<h2>今天想吃什么？</h2>
+
+<div class="card">
+    <div class="food">🍗</div>
+    <h2>药材纸包鸡</h2>
+    <span class="tag">鸡肉</span>
+    <p>去骨鸡腿、红枣、枸杞、党参、姜。</p>
+    <button class="order" onclick="addFood('药材纸包鸡')">
+        我要吃 ❤️
+    </button>
+</div>
+
+<div class="card">
+    <div class="food">🍅</div>
+    <h2>番茄浓汤</h2>
+    <span class="tag">汤</span>
+    <p>番茄、洋葱、蒜、鸡高汤、鲜奶油。</p>
+    <button class="order" onclick="addFood('番茄浓汤')">
+        我要吃 ❤️
+    </button>
+</div>
+
+<div class="card">
+    <div class="food">🍝</div>
+    <h2>奶油意大利面</h2>
+    <span class="tag">意面</span>
+    <p>意大利面、鲜奶油、蘑菇、Parmesan cheese。</p>
+    <button class="order" onclick="addFood('奶油意大利面')">
+        我要吃 ❤️
+    </button>
+</div>
+
+<div class="card">
+    <div class="food">🐟</div>
+    <h2>北海道味噌黄油三文鱼</h2>
+    <span class="tag">鱼</span>
+    <p>三文鱼、白味噌、黄油、洋葱、鸿喜菇。</p>
+    <button class="order" onclick="addFood('北海道味噌黄油三文鱼')">
+        我要吃 ❤️
+    </button>
+</div>
+
+</section>
+
+
+<section id="today" class="hidden">
+
+<h2>📋 今日菜单</h2>
+
+<div id="menu"></div>
+
+</section>
+
+
+<section id="recipe" class="hidden">
+
+<h2>📖 刘太食谱</h2>
+
+<div class="card">
+<h2>🍗 药材纸包鸡</h2>
+<p><b>材料：</b>去骨鸡腿、红枣、枸杞、党参、姜、酱油、麻油。</p>
+<p><b>做法：</b>鸡腿腌好后包入烘焙纸，蒸熟或烤熟即可。</p>
+</div>
+
+<div class="card">
+<h2>🍅 番茄浓汤</h2>
+<p><b>材料：</b>番茄、洋葱、蒜、鸡高汤、鲜奶油。</p>
+<p><b>做法：</b>洋葱和蒜炒香，加入番茄及高汤煮软，打成泥，再加入鲜奶油调味。</p>
+</div>
+
+<div class="card">
+<h2>🍝 奶油意大利面</h2>
+<p><b>材料：</b>意大利面、鲜奶油、蘑菇、蒜、Parmesan cheese。</p>
+<p><b>做法：</b>意面煮熟。炒香蒜和蘑菇，加入鲜奶油及芝士，最后拌入意面。</p>
+</div>
+
+</section>
+
+</main>
+
+
+<script>
+
+let menu = JSON.parse(localStorage.getItem("liuTaiMenu") || "[]");
+
+function addFood(food) {
+
+    menu.push(food);
+
+    localStorage.setItem("liuTaiMenu", JSON.stringify(menu));
+
+    alert(food + " 已加入今日菜单 ❤️");
+
+    showMenu();
+}
+
+function removeFood(index) {
+
+    menu.splice(index, 1);
+
+    localStorage.setItem("liuTaiMenu", JSON.stringify(menu));
+
+    showMenu();
+}
+
+function showMenu() {
+
+    let box = document.getElementById("menu");
+
+    if (menu.length === 0) {
+
+        box.innerHTML =
+        '<div class="empty">今天还没有人点菜 😊</div>';
+
+        return;
+    }
+
+    box.innerHTML = menu.map(function(food, index) {
+
+        return `
+        <div class="card">
+            <h2>🍽️ ${food}</h2>
+            <button class="remove"
+                onclick="removeFood(${index})">
+                取消
+            </button>
+        </div>
+        `;
+
+    }).join("");
+}
+
+function showPage(page, button) {
+
+    document.getElementById("order").classList.add("hidden");
+    document.getElementById("today").classList.add("hidden");
+    document.getElementById("recipe").classList.add("hidden");
+
+    document.getElementById(page).classList.remove("hidden");
+
+    document.querySelectorAll("nav button").forEach(function(btn) {
+        btn.classList.remove("active");
+    });
+
+    button.classList.add("active");
+
+    showMenu();
+}
+
+showMenu();
+
+</script>
+
+</body>
+</html>
