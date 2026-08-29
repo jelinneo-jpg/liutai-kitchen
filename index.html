@@ -6,276 +6,469 @@
 <title>刘太厨房</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", sans-serif;
-    background: #fff8f2;
-    color: #3d2b24;
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;
+  background:#fff8f2;
+  color:#3d2b24;
 }
-
-header {
-    background: #f6c7a8;
-    padding: 28px 20px;
-    text-align: center;
+header{
+  background:#f6c7a8;
+  padding:28px 20px;
+  text-align:center;
 }
-
-header h1 {
-    margin: 0;
-    font-size: 30px;
+header h1{margin:0;font-size:30px}
+header p{margin:8px 0 0;color:#76564a}
+nav{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  padding:15px;
+  background:white;
 }
-
-header p {
-    margin: 8px 0 0;
-    color: #76564a;
+nav button{
+  border:0;
+  padding:10px 15px;
+  border-radius:20px;
+  background:#fff0e5;
+  color:#8b5437;
 }
-
-nav {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 15px;
-    background: white;
+nav button.active{
+  background:#e89a68;
+  color:white;
 }
-
-nav button {
-    border: none;
-    padding: 10px 16px;
-    border-radius: 20px;
-    background: #fff0e5;
-    color: #8b5437;
+main{
+  max-width:650px;
+  margin:auto;
+  padding:15px;
 }
-
-nav button.active {
-    background: #e89a68;
-    color: white;
+.card{
+  background:white;
+  border-radius:20px;
+  padding:18px;
+  margin-bottom:15px;
+  box-shadow:0 3px 12px rgba(0,0,0,.06);
 }
-
-main {
-    max-width: 650px;
-    margin: auto;
-    padding: 15px;
+.food{font-size:42px}
+.tag{
+  display:inline-block;
+  background:#fff0e5;
+  color:#9b603e;
+  padding:5px 9px;
+  border-radius:10px;
+  font-size:13px;
 }
-
-.card {
-    background: white;
-    border-radius: 20px;
-    padding: 18px;
-    margin-bottom: 15px;
-    box-shadow: 0 3px 12px rgba(0,0,0,0.06);
+button.action{
+  border:0;
+  background:#e89a68;
+  color:white;
+  padding:11px 17px;
+  border-radius:14px;
+  font-weight:bold;
 }
-
-.food {
-    font-size: 45px;
+button.delete{
+  border:0;
+  background:#eee;
+  padding:8px 12px;
+  border-radius:12px;
 }
-
-h2 {
-    margin-top: 5px;
+input,textarea,select{
+  width:100%;
+  box-sizing:border-box;
+  padding:12px;
+  margin:7px 0 12px;
+  border:1px solid #ead8cc;
+  border-radius:12px;
+  font-size:15px;
 }
-
-.tag {
-    display: inline-block;
-    background: #fff0e5;
-    color: #9b603e;
-    padding: 5px 9px;
-    border-radius: 10px;
-    font-size: 13px;
-}
-
-button.order {
-    border: none;
-    background: #e89a68;
-    color: white;
-    padding: 11px 18px;
-    border-radius: 14px;
-    font-weight: bold;
-}
-
-button.remove {
-    border: none;
-    background: #eee;
-    padding: 8px 12px;
-    border-radius: 12px;
-}
-
-.hidden {
-    display: none;
-}
-
-.empty {
-    text-align: center;
-    padding: 40px;
-    color: #987d70;
-}
+.hidden{display:none}
+.empty{text-align:center;padding:35px;color:#987d70}
 </style>
 </head>
 
 <body>
 
 <header>
-    <h1>🍳 刘太厨房</h1>
-    <p>一家人的点菜 · 食谱 · 今日菜单</p>
+  <h1>🍳 刘太厨房</h1>
+  <p>一家人的点菜 · 食谱</p>
 </header>
 
 <nav>
-    <button class="active" onclick="showPage('order', this)">🍽️ 点菜</button>
-    <button onclick="showPage('today', this)">📋 今日菜单</button>
-    <button onclick="showPage('recipe', this)">📖 食谱</button>
+  <button class="active" onclick="page('order',this)">🍽️ 点菜</button>
+  <button onclick="page('today',this)">📋 今日菜单</button>
+  <button onclick="page('recipes',this)">📖 食谱</button>
+  <button onclick="page('add',this)">➕ 加食谱</button>
 </nav>
 
 <main>
 
 <section id="order">
-
 <h2>今天想吃什么？</h2>
-
-<div class="card">
-    <div class="food">🍗</div>
-    <h2>药材纸包鸡</h2>
-    <span class="tag">鸡肉</span>
-    <p>去骨鸡腿、红枣、枸杞、党参、姜。</p>
-    <button class="order" onclick="addFood('药材纸包鸡')">
-        我要吃 ❤️
-    </button>
-</div>
-
-<div class="card">
-    <div class="food">🍅</div>
-    <h2>番茄浓汤</h2>
-    <span class="tag">汤</span>
-    <p>番茄、洋葱、蒜、鸡高汤、鲜奶油。</p>
-    <button class="order" onclick="addFood('番茄浓汤')">
-        我要吃 ❤️
-    </button>
-</div>
-
-<div class="card">
-    <div class="food">🍝</div>
-    <h2>奶油意大利面</h2>
-    <span class="tag">意面</span>
-    <p>意大利面、鲜奶油、蘑菇、Parmesan cheese。</p>
-    <button class="order" onclick="addFood('奶油意大利面')">
-        我要吃 ❤️
-    </button>
-</div>
-
-<div class="card">
-    <div class="food">🐟</div>
-    <h2>北海道味噌黄油三文鱼</h2>
-    <span class="tag">鱼</span>
-    <p>三文鱼、白味噌、黄油、洋葱、鸿喜菇。</p>
-    <button class="order" onclick="addFood('北海道味噌黄油三文鱼')">
-        我要吃 ❤️
-    </button>
-</div>
-
+<div id="orderList"></div>
 </section>
-
 
 <section id="today" class="hidden">
-
 <h2>📋 今日菜单</h2>
-
-<div id="menu"></div>
-
+<div id="todayList"></div>
 </section>
 
-
-<section id="recipe" class="hidden">
-
+<section id="recipes" class="hidden">
 <h2>📖 刘太食谱</h2>
+<div id="recipeList"></div>
+</section>
+
+<section id="add" class="hidden">
+<h2>➕ 添加新食谱</h2>
 
 <div class="card">
-<h2>🍗 药材纸包鸡</h2>
-<p><b>材料：</b>去骨鸡腿、红枣、枸杞、党参、姜、酱油、麻油。</p>
-<p><b>做法：</b>鸡腿腌好后包入烘焙纸，蒸熟或烤熟即可。</p>
-</div>
 
-<div class="card">
-<h2>🍅 番茄浓汤</h2>
-<p><b>材料：</b>番茄、洋葱、蒜、鸡高汤、鲜奶油。</p>
-<p><b>做法：</b>洋葱和蒜炒香，加入番茄及高汤煮软，打成泥，再加入鲜奶油调味。</p>
-</div>
+<label>菜名</label>
+<input id="name" placeholder="例如：黑椒鸡扒">
 
-<div class="card">
-<h2>🍝 奶油意大利面</h2>
-<p><b>材料：</b>意大利面、鲜奶油、蘑菇、蒜、Parmesan cheese。</p>
-<p><b>做法：</b>意面煮熟。炒香蒜和蘑菇，加入鲜奶油及芝士，最后拌入意面。</p>
-</div>
+<label>分类</label>
+<select id="category">
+<option>鸡肉</option>
+<option>猪肉</option>
+<option>牛肉</option>
+<option>鱼</option>
+<option>汤</option>
+<option>意面</option>
+<option>其他</option>
+</select>
 
+<label>材料</label>
+<textarea id="ingredients" rows="4"
+placeholder="例如：鸡腿、黑胡椒、洋葱……"></textarea>
+
+<label>做法</label>
+<textarea id="instructions" rows="6"
+placeholder="写下你的做法……"></textarea>
+
+<button class="action" onclick="addRecipe()">
+保存食谱 ❤️
+</button>
+
+</div>
 </section>
 
 </main>
 
-
 <script>
 
-let menu = JSON.parse(localStorage.getItem("liuTaiMenu") || "[]");
+/* =========================
+   把下面两项换成你自己的资料
+   ========================= */
 
-function addFood(food) {
+const SUPABASE_URL = "https://vgkjqpzktytadjavgzzn.supabase.co/rest/v1/"；
 
-    menu.push(food);
+const SUPABASE_KEY = "sb_publishable_4ULyasIw_XqkjnLYbs90LA_MVrn1Ami";
 
-    localStorage.setItem("liuTaiMenu", JSON.stringify(menu));
 
-    alert(food + " 已加入今日菜单 ❤️");
+/* =========================
+   食谱
+   ========================= */
 
-    showMenu();
-}
+let recipes = [];
 
-function removeFood(index) {
+async function loadRecipes(){
 
-    menu.splice(index, 1);
-
-    localStorage.setItem("liuTaiMenu", JSON.stringify(menu));
-
-    showMenu();
-}
-
-function showMenu() {
-
-    let box = document.getElementById("menu");
-
-    if (menu.length === 0) {
-
-        box.innerHTML =
-        '<div class="empty">今天还没有人点菜 😊</div>';
-
-        return;
+  const response = await fetch(
+    SUPABASE_URL + "/rest/v1/recipes?select=*",
+    {
+      headers:{
+        "apikey":SUPABASE_KEY,
+        "Authorization":"Bearer " + SUPABASE_KEY
+      }
     }
+  );
 
-    box.innerHTML = menu.map(function(food, index) {
+  recipes = await response.json();
 
-        return `
-        <div class="card">
-            <h2>🍽️ ${food}</h2>
-            <button class="remove"
-                onclick="removeFood(${index})">
-                取消
-            </button>
-        </div>
-        `;
+  if(!Array.isArray(recipes)){
+    recipes=[];
+  }
 
-    }).join("");
+  renderRecipes();
+  renderOrder();
 }
 
-function showPage(page, button) {
 
-    document.getElementById("order").classList.add("hidden");
-    document.getElementById("today").classList.add("hidden");
-    document.getElementById("recipe").classList.add("hidden");
+/* =========================
+   显示点菜
+   ========================= */
 
-    document.getElementById(page).classList.remove("hidden");
+function renderOrder(){
 
-    document.querySelectorAll("nav button").forEach(function(btn) {
-        btn.classList.remove("active");
-    });
+  const box=document.getElementById("orderList");
 
-    button.classList.add("active");
+  if(recipes.length===0){
 
-    showMenu();
+    box.innerHTML=
+      '<div class="empty">还没有食谱 😊<br>先去「➕ 加食谱」吧！</div>';
+
+    return;
+  }
+
+  box.innerHTML=recipes.map(r=>`
+
+    <div class="card">
+
+      <div class="food">🍽️</div>
+
+      <h2>${escapeHtml(r.name)}</h2>
+
+      <span class="tag">
+        ${escapeHtml(r.category || "其他")}
+      </span>
+
+      <p>
+        ${escapeHtml(r.ingredients || "")}
+      </p>
+
+      <button class="action"
+        onclick="orderFood('${r.id}')">
+        我要吃 ❤️
+      </button>
+
+    </div>
+
+  `).join("");
 }
 
-showMenu();
+
+/* =========================
+   显示食谱
+   ========================= */
+
+function renderRecipes(){
+
+  const box=document.getElementById("recipeList");
+
+  if(recipes.length===0){
+
+    box.innerHTML=
+      '<div class="empty">还没有食谱 😊</div>';
+
+    return;
+  }
+
+  box.innerHTML=recipes.map(r=>`
+
+    <div class="card">
+
+      <h2>🍽️ ${escapeHtml(r.name)}</h2>
+
+      <span class="tag">
+        ${escapeHtml(r.category || "其他")}
+      </span>
+
+      <p>
+        <b>材料：</b><br>
+        ${escapeHtml(r.ingredients || "")}
+      </p>
+
+      <p>
+        <b>做法：</b><br>
+        ${escapeHtml(r.instructions || "")}
+      </p>
+
+    </div>
+
+  `).join("");
+}
+
+
+/* =========================
+   添加食谱
+   ========================= */
+
+async function addRecipe(){
+
+  const name=document.getElementById("name").value.trim();
+  const category=document.getElementById("category").value;
+  const ingredients=document.getElementById("ingredients").value.trim();
+  const instructions=document.getElementById("instructions").value.trim();
+
+  if(!name){
+
+    alert("请先填写菜名 ❤️");
+    return;
+  }
+
+  const response=await fetch(
+    SUPABASE_URL + "/rest/v1/recipes",
+    {
+      method:"POST",
+
+      headers:{
+        "Content-Type":"application/json",
+        "apikey":SUPABASE_KEY,
+        "Authorization":"Bearer " + SUPABASE_KEY,
+        "Prefer":"return=minimal"
+      },
+
+      body:JSON.stringify({
+        name:name,
+        category:category,
+        ingredients:ingredients,
+        instructions:instructions
+      })
+    }
+  );
+
+  if(response.ok){
+
+    alert("食谱已经保存 ❤️");
+
+    document.getElementById("name").value="";
+    document.getElementById("ingredients").value="";
+    document.getElementById("instructions").value="";
+
+    await loadRecipes();
+
+    page("recipes",document.querySelectorAll("nav button")[2]);
+
+  }else{
+
+    alert("保存失败，请检查 Supabase 设置。");
+
+  }
+}
+
+
+/* =========================
+   页面切换
+   ========================= */
+
+function page(id,button){
+
+  ["order","today","recipes","add"].forEach(x=>{
+    document.getElementById(x).classList.add("hidden");
+  });
+
+  document.getElementById(id).classList.remove("hidden");
+
+  document.querySelectorAll("nav button").forEach(b=>{
+    b.classList.remove("active");
+  });
+
+  button.classList.add("active");
+
+  if(id==="today"){
+    loadToday();
+  }
+}
+
+
+/* =========================
+   点菜
+   ========================= */
+
+function orderFood(id){
+
+  const recipe=recipes.find(r=>String(r.id)===String(id));
+
+  if(!recipe)return;
+
+  let today=JSON.parse(
+    localStorage.getItem("todayOrders") || "[]"
+  );
+
+  today.push({
+    name:recipe.name,
+    time:new Date().toLocaleTimeString("zh-CN",{
+      hour:"2-digit",
+      minute:"2-digit"
+    })
+  });
+
+  localStorage.setItem(
+    "todayOrders",
+    JSON.stringify(today)
+  );
+
+  alert(recipe.name + " 已加入今日菜单 ❤️");
+
+  loadToday();
+}
+
+
+/* =========================
+   今日菜单
+   ========================= */
+
+function loadToday(){
+
+  const box=document.getElementById("todayList");
+
+  const today=JSON.parse(
+    localStorage.getItem("todayOrders") || "[]"
+  );
+
+  if(today.length===0){
+
+    box.innerHTML=
+      '<div class="empty">今天还没有人点菜 😊</div>';
+
+    return;
+  }
+
+  box.innerHTML=today.map((x,i)=>`
+
+    <div class="card">
+
+      <h2>🍽️ ${escapeHtml(x.name)}</h2>
+
+      <p>点菜时间：${escapeHtml(x.time)}</p>
+
+      <button class="delete"
+        onclick="removeOrder(${i})">
+        取消
+      </button>
+
+    </div>
+
+  `).join("");
+}
+
+
+function removeOrder(index){
+
+  let today=JSON.parse(
+    localStorage.getItem("todayOrders") || "[]"
+  );
+
+  today.splice(index,1);
+
+  localStorage.setItem(
+    "todayOrders",
+    JSON.stringify(today)
+  );
+
+  loadToday();
+}
+
+
+/* =========================
+   防止输入内容破坏网页
+   ========================= */
+
+function escapeHtml(text){
+
+  return String(text)
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;")
+    .replaceAll("'","&#039;");
+}
+
+
+/* =========================
+   开始
+   ========================= */
+
+loadRecipes();
 
 </script>
 
