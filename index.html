@@ -184,12 +184,11 @@ async function loadRecipes() {
       }
     );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log("Supabase error:", errorText);
-      alert("读取食谱失败，请检查连接。");
-      return;
-    }
+  if (!response.ok) {
+  const errorText = await response.text();
+  alert("错误：" + response.status + "\n" + errorText);
+  return;
+}
 
     recipes = await response.json();
 
