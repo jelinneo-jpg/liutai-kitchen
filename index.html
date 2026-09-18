@@ -158,6 +158,12 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
 .detail-title{margin-top:18px;margin-bottom:6px;font-size:13.5px;color:var(--ink-soft);}
 .detail-text{line-height:1.7;white-space:pre-wrap;font-size:14.5px;}
 .recipe-link{color:var(--purple);word-break:break-all;font-size:13.5px;}
+.detail-hero{background:linear-gradient(135deg,var(--accent-soft),var(--card-bg));border:1px solid var(--line);border-radius:18px;padding:18px;margin-bottom:14px;}
+.detail-hero h2{margin:0 0 8px;font-size:22px;line-height:1.35;}
+.detail-section{background:var(--card-bg);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-top:10px;}
+.detail-section .detail-title{margin:0 0 10px;font-weight:800;color:var(--ink);}
+.detail-section .detail-text{color:var(--ink-soft);}
+.detail-section .recipe-link{display:block;background:var(--accent-soft);padding:10px 12px;border-radius:10px;text-decoration:none;}
 .confirm-sheet{max-width:340px;border-radius:18px;}
 .confirm-msg{font-size:14.5px;line-height:1.7;margin-bottom:18px;}
 
@@ -183,6 +189,12 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
 }
 .meal-option .ic{font-size:18px;}
 .meal-option:active{background:var(--accent-soft);border-color:var(--accent);}
+.settings-actions{display:grid;grid-template-columns:1fr;gap:9px;margin-top:14px;}
+.setting-btn{width:100%;border:1px solid var(--line);background:var(--card-bg);color:var(--ink);padding:12px 14px;border-radius:12px;font-size:14px;font-weight:700;text-align:left;}
+.setting-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}
+.setting-btn.danger{background:var(--danger-bg);border-color:transparent;color:var(--danger-ink);}
+.backup-alert{background:#FFF3CD;color:#7A5A00;border:1px solid #F4D77A;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:13px;line-height:1.55;}
+:root[data-theme="dark"] .backup-alert{background:#403617;color:#F2D77C;border-color:#6A5924;}
 </style>
 </head>
 <body>
@@ -200,6 +212,7 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
     <button data-tab="menu" onclick="switchTab('menu')">🍽️ 菜单</button>
     <button data-tab="today" onclick="switchTab('today')">📅 今日菜单</button>
     <button data-tab="record" onclick="switchTab('record')">📋 点菜记录</button>
+    <button data-tab="settings" onclick="switchTab('settings')">⚙️ 设置</button>
   </nav>
 
   <section id="menuSection" class="section active">
@@ -210,8 +223,7 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
     <div class="subtabs" id="subtabs">
       <button class="subtab active" data-category="全部" onclick="changeCategory('全部')">全部</button>
       <button class="subtab" data-category="早餐" onclick="changeCategory('早餐')">早餐</button>
-      <button class="subtab" data-category="午餐" onclick="changeCategory('午餐')">午餐</button>
-      <button class="subtab" data-category="晚餐" onclick="changeCategory('晚餐')">晚餐</button>
+      <button class="subtab" data-category="午餐/晚餐" onclick="changeCategory('午餐/晚餐')">午餐/晚餐</button>
     </div>
     <div id="foodList"></div>
   </section>
@@ -226,6 +238,37 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
     <div id="recordList"></div>
   </section>
 
+  <section id="settingsSection" class="section">
+    <div class="sectionhead"><h2>⚙️ 设置</h2></div>
+    <div id="backupReminder"></div>
+    <div class="card">
+      <div class="card-title"><span class="ic">☁️</span><span class="txt">资料备份</span></div>
+      <div class="foothint" id="lastBackupText">上次备份：还没有备份</div>
+      <div class="settings-actions">
+        <button class="setting-btn primary" onclick="exportData()">💾 导出我的资料</button>
+        <button class="setting-btn" onclick="document.getElementById('importFile').click()">📂 导入我的资料</button>
+        <input id="importFile" type="file" accept=".json,application/json" style="display:none" onchange="importData(event)">
+      </div>
+      <div class="foothint">建议把导出的 JSON 文件保存到 iCloud Drive。换手机后打开同一个网页，再从这里导入即可。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ic">🛠️</span><span class="txt">资料管理</span></div>
+      <div class="settings-actions">
+        <button class="setting-btn danger" onclick="confirmResetData()">🔄 恢复默认资料</button>
+      </div>
+      <div class="foothint">恢复默认资料会清除目前的食物、今日菜单和点菜记录。</div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ic">🔐</span><span class="txt">App 密码</span></div>
+      <div class="foothint" id="passwordStatus">目前未设置密码</div>
+      <div class="settings-actions">
+        <button class="setting-btn" onclick="openPasswordModal()">🔐 修改密码</button>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <!-- 增加 / 编辑食物 -->
@@ -238,8 +281,7 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
     <label>分类（用于菜单筛选）</label>
     <select id="foodCategory">
       <option value="早餐">早餐</option>
-      <option value="午餐">午餐</option>
-      <option value="晚餐">晚餐</option>
+      <option value="午餐/晚餐">午餐/晚餐</option>
     </select>
     <label>热量（可不填）</label>
     <input id="foodCalories" type="number" placeholder="例如：320">
@@ -264,18 +306,26 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
 <div id="detailModal" class="modal">
   <div class="modal-sheet">
     <button class="back-button" onclick="closeDetail()">← 返回</button>
-    <div class="card" style="box-shadow:none;padding:0;">
-      <h2 id="detailName"></h2>
-      <div id="detailInfo" class="meta"></div>
+    <div class="card" style="box-shadow:none;padding:0;background:transparent;">
+      <div class="detail-hero">
+        <h2 id="detailName"></h2>
+        <div id="detailInfo" class="meta"></div>
+      </div>
 
-      <div class="detail-title">📝 材料</div>
-      <div id="detailIngredients" class="detail-text"></div>
+      <div class="detail-section">
+        <div class="detail-title">🥕 材料</div>
+        <div id="detailIngredients" class="detail-text"></div>
+      </div>
 
-      <div class="detail-title">👩🏻‍🍳 做法</div>
-      <div id="detailMethod" class="detail-text"></div>
+      <div class="detail-section">
+        <div class="detail-title">👩🏻‍🍳 做法</div>
+        <div id="detailMethod" class="detail-text"></div>
+      </div>
 
-      <div class="detail-title">🔗 食谱 LINK</div>
-      <a id="detailLink" class="recipe-link" target="_blank" rel="noopener"></a>
+      <div class="detail-section">
+        <div class="detail-title">🔗 食谱 LINK</div>
+        <a id="detailLink" class="recipe-link" target="_blank" rel="noopener"></a>
+      </div>
 
       <div class="action-row">
         <button class="edit-button" onclick="editFood()">✏️ 编辑</button>
@@ -299,6 +349,22 @@ input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-
     </div>
     <div class="modal-actions">
       <button class="cancel-button" onclick="closeMealModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 修改密码 -->
+<div id="passwordModal" class="modal">
+  <div class="modal-sheet confirm-sheet">
+    <h2>🔐 修改密码</h2>
+    <label>新密码</label>
+    <input id="newPassword" type="password" inputmode="numeric" placeholder="请输入新密码">
+    <label>再次输入</label>
+    <input id="confirmPassword" type="password" inputmode="numeric" placeholder="再次输入新密码">
+    <div id="passwordError" class="field-error">两次输入的密码不一致</div>
+    <div class="modal-actions">
+      <button class="cancel-button" onclick="closePasswordModal()">取消</button>
+      <button class="save-button" onclick="savePassword()">保存</button>
     </div>
   </div>
 </div>
@@ -340,7 +406,7 @@ let currentCategory = "全部";
 let currentFoodId = null;
 let pendingConfirmFn = null;
 let pendingPickFoodId = null;
-const CAT_ICON = { "早餐": "🥣", "午餐": "🍱", "晚餐": "🍲" };
+const CAT_ICON = { "早餐": "🥣", "午餐": "🍱", "晚餐": "🍲", "午餐/晚餐": "🍽️" };
 const MEALS = ["早餐", "午餐", "晚餐"];
 const ING_GROUPS = [
   { key: "主材料", icon: "🍖" },
@@ -385,9 +451,11 @@ function switchTab(tab) {
   document.getElementById("menuSection").classList.toggle("active", tab === "menu");
   document.getElementById("todaySection").classList.toggle("active", tab === "today");
   document.getElementById("recordSection").classList.toggle("active", tab === "record");
+  document.getElementById("settingsSection").classList.toggle("active", tab === "settings");
   if (tab === "menu") renderFoods();
   if (tab === "today") renderTodayMenu();
   if (tab === "record") renderRecords();
+  if (tab === "settings") renderSettings();
 }
 
 /* ========= 分类筛选（仅用于菜单浏览） ========= */
@@ -406,7 +474,11 @@ function findTodayOrder(foodId) {
 /* ========= 显示食物列表 ========= */
 function renderFoods() {
   const list = document.getElementById("foodList");
-  const filtered = currentCategory === "全部" ? foods : foods.filter(f => f.category === currentCategory);
+  const filtered = currentCategory === "全部"
+    ? foods
+    : currentCategory === "午餐/晚餐"
+      ? foods.filter(f => ["午餐","晚餐","午餐/晚餐"].includes(f.category))
+      : foods.filter(f => f.category === currentCategory);
 
   if (filtered.length === 0) {
     list.innerHTML = `<div class="empty">这里还没有食物<br><br>点击「＋ 增加食物」开始添加 ❤️</div>`;
@@ -779,6 +851,115 @@ function runConfirm() {
   const fn = pendingConfirmFn;
   closeConfirm();
   if (fn) fn();
+}
+
+/* ========= 设置 / 备份 ========= */
+function renderSettings() {
+  const last = localStorage.getItem("dietLastBackup");
+  const text = document.getElementById("lastBackupText");
+  const reminder = document.getElementById("backupReminder");
+  const pwdStatus = document.getElementById("passwordStatus");
+
+  text.textContent = last ? `上次备份：${last}` : "上次备份：还没有备份";
+  pwdStatus.textContent = localStorage.getItem("dietAppPassword") ? "已设置密码" : "目前未设置密码";
+
+  let needBackup = !last;
+  if (last) {
+    const lastDate = new Date(last + "T00:00:00");
+    const days = Math.floor((new Date() - lastDate) / 86400000);
+    needBackup = days >= 30;
+  }
+  reminder.innerHTML = needBackup
+    ? `<div class="backup-alert">💡 ${last ? "距离上次备份已经超过 30 天，建议现在备份一次。" : "你还没有备份过资料，建议导出一份保存到 iCloud Drive。"}</div>`
+    : "";
+}
+
+function exportData() {
+  const today = getToday();
+  const data = {
+    app: "我的一日三餐",
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    foods: foods,
+    orders: orders
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `我的一日三餐_备份_${today}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  localStorage.setItem("dietLastBackup", today);
+  renderSettings();
+}
+
+function importData(event) {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = "";
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function() {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || !Array.isArray(data.foods) || !Array.isArray(data.orders)) {
+        throw new Error("invalid");
+      }
+      showConfirm("确定要导入这份备份吗？目前的资料会被备份文件取代。", () => {
+        foods = data.foods;
+        orders = data.orders;
+        saveData();
+        refreshAllViews();
+        renderSettings();
+        alert("资料已成功导入。");
+      });
+    } catch(e) {
+      alert("这个备份文件无法读取，请选择由本 App 导出的 JSON 备份文件。");
+    }
+  };
+  reader.readAsText(file);
+}
+
+function confirmResetData() {
+  showConfirm("确定要恢复默认资料吗？目前所有食物、今日菜单和点菜记录都会被清除。建议先导出备份。", () => {
+    foods = [];
+    orders = [];
+    localStorage.removeItem("dietFoods");
+    localStorage.removeItem("dietOrders");
+    saveData();
+    refreshAllViews();
+    renderSettings();
+  });
+}
+
+function openPasswordModal() {
+  document.getElementById("newPassword").value = "";
+  document.getElementById("confirmPassword").value = "";
+  document.getElementById("passwordError").style.display = "none";
+  document.getElementById("passwordModal").classList.add("show");
+}
+function closePasswordModal() {
+  document.getElementById("passwordModal").classList.remove("show");
+}
+function savePassword() {
+  const p1 = document.getElementById("newPassword").value;
+  const p2 = document.getElementById("confirmPassword").value;
+  const err = document.getElementById("passwordError");
+  if (!p1) {
+    err.textContent = "请输入新密码";
+    err.style.display = "block";
+    return;
+  }
+  if (p1 !== p2) {
+    err.textContent = "两次输入的密码不一致";
+    err.style.display = "block";
+    return;
+  }
+  localStorage.setItem("dietAppPassword", p1);
+  closePasswordModal();
+  renderSettings();
 }
 
 /* ========= 保存到本地 ========= */
