@@ -3,483 +3,1981 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>刘太厨房</title>
+
+<title>我的减肥厨房</title>
 
 <style>
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC",sans-serif;
-  background:#fff8f2;
-  color:#3d2b24;
+
+* {
+  box-sizing: border-box;
 }
-header{
-  background:#f6c7a8;
-  padding:28px 20px;
-  text-align:center;
+
+body {
+  margin: 0;
+  background: #fff8f1;
+  color: #4b3a2f;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Microsoft YaHei",
+    sans-serif;
 }
-header h1{margin:0;font-size:30px}
-header p{margin:8px 0 0;color:#76564a}
-nav{
-  display:flex;
-  justify-content:center;
-  gap:8px;
-  padding:15px;
-  background:white;
+
+header {
+  background: #f4a15a;
+  color: white;
+  text-align: center;
+  padding: 22px 16px;
 }
-nav button{
-  border:0;
-  padding:10px 15px;
-  border-radius:20px;
-  background:#fff0e5;
-  color:#8b5437;
+
+header h1 {
+  margin: 0;
+  font-size: 25px;
 }
-nav button.active{
-  background:#e89a68;
-  color:white;
+
+header p {
+  margin: 6px 0 0;
+  font-size: 13px;
 }
-main{
-  max-width:650px;
-  margin:auto;
-  padding:15px;
+
+main {
+  max-width: 680px;
+  margin: auto;
+  padding: 18px;
 }
-.card{
-  background:white;
-  border-radius:20px;
-  padding:18px;
-  margin-bottom:15px;
-  box-shadow:0 3px 12px rgba(0,0,0,.06);
+
+.page {
+  display: none;
 }
-.food{font-size:42px}
-.tag{
-  display:inline-block;
-  background:#fff0e5;
-  color:#9b603e;
-  padding:5px 9px;
-  border-radius:10px;
-  font-size:13px;
+
+.page.active {
+  display: block;
 }
-button.action{
-  border:0;
-  background:#e89a68;
-  color:white;
-  padding:11px 17px;
-  border-radius:14px;
-  font-weight:bold;
+
+button {
+  font-family: inherit;
+  cursor: pointer;
 }
-button.delete{
-  border:0;
-  background:#eee;
-  padding:8px 12px;
-  border-radius:12px;
+
+/* 首页 */
+
+.home-button {
+  width: 100%;
+  border: 1px solid #f0dccb;
+  background: white;
+  border-radius: 20px;
+  padding: 23px;
+  margin: 7px 0;
+  font-size: 19px;
+  color: #684b38;
+  box-shadow: 0 3px 12px #00000008;
 }
-input,textarea,select{
-  width:100%;
-  box-sizing:border-box;
-  padding:12px;
-  margin:7px 0 12px;
-  border:1px solid #ead8cc;
-  border-radius:12px;
-  font-size:15px;
+
+/* 卡片 */
+
+.card {
+  background: white;
+  border: 1px solid #f0dccb;
+  border-radius: 18px;
+  padding: 17px;
+  margin-bottom: 12px;
 }
-.hidden{display:none}
-.empty{text-align:center;padding:35px;color:#987d70}
+
+/* 返回 */
+
+.back-button {
+  border: 1px solid #ead6c5;
+  background: white;
+  color: #76563f;
+  border-radius: 13px;
+  padding: 10px 15px;
+  margin-bottom: 15px;
+}
+
+/* 分类 */
+
+.tabs {
+  display: grid;
+  grid-template-columns:
+    repeat(4, 1fr);
+
+  gap: 8px;
+}
+
+.tab-button {
+  border: 1px solid #ead6c5;
+  background: white;
+  border-radius: 12px;
+  padding: 10px 3px;
+  color: #76563f;
+}
+
+.tab-button.active {
+  background: #f4a15a;
+  color: white;
+  border-color: #f4a15a;
+}
+
+/* 增加 */
+
+.add-button {
+  width: 100%;
+  border: 0;
+  background: #f4a15a;
+  color: white;
+  border-radius: 14px;
+  padding: 13px;
+  margin: 15px 0;
+  font-size: 16px;
+}
+
+/* 食物 */
+
+.food-card {
+  background: white;
+  border: 1px solid #f0dccb;
+  border-radius: 16px;
+  padding: 14px;
+  margin: 9px 0;
+}
+
+.food-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.food-name {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.food-info {
+  font-size: 13px;
+  color: #9b8170;
+  margin-top: 5px;
+}
+
+.pick-button {
+  border: 0;
+  border-radius: 10px;
+  padding: 8px 11px;
+  background: #fff0df;
+  color: #a25b29;
+  white-space: nowrap;
+}
+
+.pick-button.picked {
+  background: #f4a15a;
+  color: white;
+}
+
+/* 空白 */
+
+.empty {
+  text-align: center;
+  color: #9b8879;
+  padding: 25px;
+}
+
+/* 今日菜单 */
+
+.record-item {
+  padding: 9px 0;
+  border-bottom: 1px solid #f0e3d8;
+}
+
+.cancel-pick {
+  float: right;
+  border: 0;
+  border-radius: 8px;
+  padding: 5px 8px;
+  background: #fff0e8;
+  color: #a34f32;
+}
+
+/* 食谱详情 */
+
+.detail-title {
+  margin-top: 20px;
+  margin-bottom: 7px;
+}
+
+.detail-text {
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.recipe-link {
+  color: #b2602c;
+  word-break: break-all;
+}
+
+/* 编辑删除 */
+
+.action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.action-row button {
+  flex: 1;
+  padding: 11px;
+  border-radius: 12px;
+}
+
+.edit-button {
+  background: white;
+  border: 1px solid #e4cdbb;
+  color: #76563f;
+}
+
+.delete-button {
+  background: #fff0e8;
+  border: 0;
+  color: #a34f32;
+}
+
+/* 弹窗 */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: #0006;
+  display: none;
+  align-items: flex-end;
+  z-index: 10;
+}
+
+.modal.show {
+  display: flex;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 680px;
+  margin: auto;
+  background: #fff8f1;
+  border-radius: 24px 24px 0 0;
+  padding: 20px;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: #765f50;
+  margin-top: 8px;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #e5d1bf;
+  border-radius: 12px;
+  margin: 6px 0 12px;
+  background: white;
+  font-size: 15px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.modal-actions button {
+  flex: 1;
+  padding: 11px;
+  border-radius: 12px;
+}
+
+.cancel-button {
+  background: white;
+  border: 1px solid #e5d1bf;
+  color: #76563f;
+}
+
+.save-button {
+  background: #f4a15a;
+  color: white;
+  border: 0;
+}
+
+/* 手机 */
+
+@media (max-width: 480px) {
+
+  main {
+    padding: 14px;
+  }
+
+  .tabs {
+    gap: 5px;
+  }
+
+  .tab-button {
+    font-size: 14px;
+  }
+
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
-  <h1>🍳 刘太厨房</h1>
-  <p>一家人的点菜 · 食谱</p>
+
+<h1>🥗 我的减肥厨房</h1>
+
+<p>我的菜单 · 今日菜单 · 点菜记录</p>
+
 </header>
 
-<nav>
-  <button class="active" onclick="page('order',this)">🍽️ 点菜</button>
-  <button onclick="page('today',this)">📋 今日菜单</button>
-  <button onclick="page('recipes',this)">📖 食谱</button>
-  <button onclick="page('add',this)">➕ 加食谱</button>
-</nav>
 
 <main>
 
-<section id="order">
-<h2>今天想吃什么？</h2>
-<div id="orderList"></div>
+
+<!-- =========================
+     首页
+========================= -->
+
+<section
+  id="homePage"
+  class="page active"
+>
+
+<button
+  class="home-button"
+  onclick="openPage('menuPage')"
+>
+🍽️　菜单
+</button>
+
+
+<button
+  class="home-button"
+  onclick="
+    openPage('todayPage');
+    renderTodayMenu();
+  "
+>
+📅　今日菜单
+</button>
+
+
+<button
+  class="home-button"
+  onclick="
+    openPage('recordPage');
+    renderRecords();
+  "
+>
+📋　点菜记录
+</button>
+
 </section>
 
-<section id="today" class="hidden">
-<h2>📋 今日菜单</h2>
-<div id="todayList"></div>
-</section>
 
-<section id="recipes" class="hidden">
-<h2>📖 刘太食谱</h2>
-<div id="recipeList"></div>
-</section>
 
-<section id="add" class="hidden">
-<h2>➕ 添加新食谱</h2>
+<!-- =========================
+     菜单
+========================= -->
+
+<section
+  id="menuPage"
+  class="page"
+>
+
+<button
+  class="back-button"
+  onclick="openPage('homePage')"
+>
+← 返回
+</button>
+
 
 <div class="card">
 
-<label>菜名</label>
-<input id="name" placeholder="例如：黑椒鸡扒">
+<h2>🍽️ 菜单</h2>
 
-<label>分类</label>
-<select id="category">
-<option>鸡肉</option>
-<option>猪肉</option>
-<option>牛肉</option>
-<option>鱼</option>
-<option>汤</option>
-<option>意面</option>
-<option>其他</option>
-</select>
 
-<label>材料</label>
-<textarea id="ingredients" rows="4"
-placeholder="例如：鸡腿、黑胡椒、洋葱……"></textarea>
+<div class="tabs">
 
-<label>做法</label>
-<textarea id="instructions" rows="6"
-placeholder="写下你的做法……"></textarea>
+<button
+  class="tab-button active"
+  data-category="全部"
+  onclick="changeCategory('全部')"
+>
+全部
+</button>
 
-<button class="action" onclick="addRecipe()">
-保存食谱 ❤️
+
+<button
+  class="tab-button"
+  data-category="早餐"
+  onclick="changeCategory('早餐')"
+>
+早餐
+</button>
+
+
+<button
+  class="tab-button"
+  data-category="午餐"
+  onclick="changeCategory('午餐')"
+>
+午餐
+</button>
+
+
+<button
+  class="tab-button"
+  data-category="晚餐"
+  onclick="changeCategory('晚餐')"
+>
+晚餐
 </button>
 
 </div>
+
+
+
+<button
+  class="add-button"
+  onclick="openAddFood()"
+>
+＋ 增加新的食物
+</button>
+
+
+<div id="foodList"></div>
+
+</div>
+
+</section>
+
+
+
+<!-- =========================
+     今日菜单
+========================= -->
+
+<section
+  id="todayPage"
+  class="page"
+>
+
+<button
+  class="back-button"
+  onclick="openPage('homePage')"
+>
+← 返回
+</button>
+
+
+<div class="card">
+
+<h2>📅 今日菜单</h2>
+
+<div id="todayList"></div>
+
+</div>
+
+</section>
+
+
+
+<!-- =========================
+     点菜记录
+========================= -->
+
+<section
+  id="recordPage"
+  class="page"
+>
+
+<button
+  class="back-button"
+  onclick="openPage('homePage')"
+>
+← 返回
+</button>
+
+
+<div class="card">
+
+<h2>📋 点菜记录</h2>
+
+<div id="recordList"></div>
+
+</div>
+
 </section>
 
 </main>
 
+
+
+<!-- =========================
+     增加 / 编辑食物
+========================= -->
+
+<div
+  id="foodModal"
+  class="modal"
+>
+
+<div class="modal-sheet">
+
+<h2 id="foodModalTitle">
+＋ 增加食物
+</h2>
+
+
+<label>
+食物名称
+</label>
+
+<input
+  id="foodName"
+  type="text"
+  placeholder="例如：鸡蛋全麦三明治"
+>
+
+
+
+<label>
+分类
+</label>
+
+<select id="foodCategory">
+
+<option value="早餐">
+早餐
+</option>
+
+<option value="午餐">
+午餐
+</option>
+
+<option value="晚餐">
+晚餐
+</option>
+
+</select>
+
+
+
+<label>
+热量（可不填）
+</label>
+
+<input
+  id="foodCalories"
+  type="number"
+  placeholder="例如：320"
+>
+
+
+
+<label>
+材料
+</label>
+
+<textarea
+  id="foodIngredients"
+  rows="4"
+  placeholder="例如：鸡蛋、全麦面包、生菜"
+></textarea>
+
+
+
+<label>
+做法
+</label>
+
+<textarea
+  id="foodMethod"
+  rows="5"
+  placeholder="写下做法"
+></textarea>
+
+
+
+<label>
+食谱 LINK（可不填）
+</label>
+
+<input
+  id="foodLink"
+  type="url"
+  placeholder="https://..."
+>
+
+
+
+<div class="modal-actions">
+
+<button
+  class="cancel-button"
+  onclick="closeFoodModal()"
+>
+取消
+</button>
+
+
+<button
+  class="save-button"
+  onclick="saveFood()"
+>
+保存
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+
+
+<!-- =========================
+     食物详情
+========================= -->
+
+<div
+  id="detailModal"
+  class="modal"
+>
+
+<div class="modal-sheet">
+
+<button
+  class="back-button"
+  onclick="closeDetail()"
+>
+← 返回
+</button>
+
+
+<div class="card">
+
+<h2 id="detailName"></h2>
+
+<div
+  id="detailInfo"
+  class="food-info"
+></div>
+
+
+
+<h3 class="detail-title">
+📝 材料
+</h3>
+
+<div
+  id="detailIngredients"
+  class="detail-text"
+></div>
+
+
+
+<h3 class="detail-title">
+👩🏻‍🍳 做法
+</h3>
+
+<div
+  id="detailMethod"
+  class="detail-text"
+></div>
+
+
+
+<h3 class="detail-title">
+🔗 食谱 LINK
+</h3>
+
+<a
+  id="detailLink"
+  class="recipe-link"
+  target="_blank"
+  rel="noopener"
+></a>
+
+
+
+<div class="action-row">
+
+<button
+  class="edit-button"
+  onclick="editFood()"
+>
+✏️ 编辑
+</button>
+
+
+<button
+  class="delete-button"
+  onclick="deleteFood()"
+>
+🗑️ 删除
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
 <script>
 
 /* =========================
-   把下面两项换成你自己的资料
-   ========================= */
+   数据
+========================= */
 
-const SUPABASE_URL = "https://vgkjqpzktytadjavgzzn.supabase.co/rest/v1/";
+let foods =
+  JSON.parse(
+    localStorage.getItem("dietFoods") || "[]"
+  );
 
-const SUPABASE_KEY = "sb_publishable_4ULyasIw_XqkjnLYbs90LA_MVrn1Ami";
+
+let todayMenu =
+  JSON.parse(
+    localStorage.getItem("dietTodayMenu") || "[]"
+  );
+
+
+let orderRecords =
+  JSON.parse(
+    localStorage.getItem("dietOrderRecords") || "[]"
+  );
+
+
+let currentCategory = "全部";
+
+let currentFoodId = null;
+
 
 
 /* =========================
-   食谱
-   ========================= */
+   日期
+========================= */
 
-let recipes = [];
+function getToday() {
 
-async function loadRecipes() {
-  try {
-    const response = await fetch(
-      SUPABASE_URL + "/rest/v1/recipes?select=*",
-      {
-        method: "GET",
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": "Bearer " + SUPABASE_KEY,
-          "Content-Type": "application/json"
-        }
-      }
+  const date = new Date();
+
+  const year =
+    date.getFullYear();
+
+  const month =
+    String(
+      date.getMonth() + 1
+    ).padStart(2, "0");
+
+  const day =
+    String(
+      date.getDate()
+    ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+
+}
+
+
+
+/* =========================
+   页面
+========================= */
+
+function openPage(pageId) {
+
+  document
+    .querySelectorAll(".page")
+    .forEach(page => {
+
+      page.classList.remove("active");
+
+    });
+
+
+  document
+    .getElementById(pageId)
+    .classList.add("active");
+
+
+  if (
+    pageId === "menuPage"
+  ) {
+
+    renderFoods();
+
+  }
+
+}
+
+
+
+/* =========================
+   分类
+========================= */
+
+function changeCategory(category) {
+
+  currentCategory =
+    category;
+
+
+  document
+    .querySelectorAll(".tab-button")
+    .forEach(button => {
+
+      button.classList.toggle(
+        "active",
+        button.dataset.category === category
+      );
+
+    });
+
+
+  renderFoods();
+
+}
+
+
+
+/* =========================
+   显示食物
+========================= */
+
+function renderFoods() {
+
+  const list =
+    document.getElementById(
+      "foodList"
     );
 
-  if (!response.ok) {
-  const errorText = await response.text();
-  alert("错误：" + response.status + "\n" + errorText);
-  return;
-}
 
-    recipes = await response.json();
+  let filteredFoods;
 
-    renderRecipes();
-    renderOrder();
 
-  } catch (error) {
-    console.log("Connection error:", error);
-    alert("无法连接食谱数据库。");
+  if (
+    currentCategory === "全部"
+  ) {
+
+    filteredFoods = foods;
+
+  } else {
+
+    filteredFoods =
+      foods.filter(
+        food =>
+          food.category ===
+          currentCategory
+      );
+
   }
-}
 
 
-/* =========================
-   显示点菜
-   ========================= */
 
-function renderOrder(){
+  if (
+    filteredFoods.length === 0
+  ) {
 
-  const box=document.getElementById("orderList");
+    list.innerHTML = `
 
-  if(recipes.length===0){
+      <div class="empty">
 
-    box.innerHTML=
-      '<div class="empty">还没有食谱 😊<br>先去「➕ 加食谱」吧！</div>';
+        这里还没有食物
+
+        <br><br>
+
+        点击「＋ 增加新的食物」
+        开始添加 ❤️
+
+      </div>
+
+    `;
 
     return;
+
   }
 
-  box.innerHTML=recipes.map(r=>`
-
-    <div class="card">
-
-      <div class="food">🍽️</div>
-
-      <h2>${escapeHtml(r.name)}</h2>
-
-      <span class="tag">
-        ${escapeHtml(r.category || "其他")}
-      </span>
-
-      <p>
-        ${escapeHtml(r.ingredients || "")}
-      </p>
-
-      <button class="action"
-        onclick="orderFood('${r.id}')">
-        我要吃 ❤️
-      </button>
-
-    </div>
-
-  `).join("");
-}
 
 
-/* =========================
-   显示食谱
-   ========================= */
+  list.innerHTML =
+    filteredFoods
+      .map(food => {
 
-function renderRecipes(){
-
-  const box=document.getElementById("recipeList");
-
-  if(recipes.length===0){
-
-    box.innerHTML=
-      '<div class="empty">还没有食谱 😊</div>';
-
-    return;
-  }
-
-  box.innerHTML=recipes.map(r=>`
-
-    <div class="card">
-
-      <h2>🍽️ ${escapeHtml(r.name)}</h2>
-
-      <span class="tag">
-        ${escapeHtml(r.category || "其他")}
-      </span>
-
-      <p>
-        <b>材料：</b><br>
-        ${escapeHtml(r.ingredients || "")}
-      </p>
-
-      <p>
-        <b>做法：</b><br>
-        ${escapeHtml(r.instructions || "")}
-      </p>
-
-    </div>
-
-  `).join("");
-}
+        const isPicked =
+          todayMenu.some(
+            item =>
+              item.foodId === food.id
+          );
 
 
-/* =========================
-   添加食谱
-   ========================= */
+        return `
 
-async function addRecipe(){
+          <div
+            class="food-card"
+            onclick="openFoodDetail('${food.id}')"
+          >
 
-  const name=document.getElementById("name").value.trim();
-  const category=document.getElementById("category").value;
-  const ingredients=document.getElementById("ingredients").value.trim();
-  const instructions=document.getElementById("instructions").value.trim();
+            <div class="food-row">
 
-  if(!name){
+              <div>
 
-    alert("请先填写菜名 ❤️");
-    return;
-  }
+                <div class="food-name">
 
-  const response=await fetch(
-    SUPABASE_URL + "/rest/v1/recipes",
-    {
-      method:"POST",
+                  ${escapeHTML(food.name)}
 
-      headers:{
-        "Content-Type":"application/json",
-        "apikey":SUPABASE_KEY,
-        "Authorization":"Bearer " + SUPABASE_KEY,
-        "Prefer":"return=minimal"
-      },
+                </div>
 
-      body:JSON.stringify({
-        name:name,
-        category:category,
-        ingredients:ingredients,
-        instructions:instructions
+
+                <div class="food-info">
+
+                  ${
+                    food.calories
+                      ? `🔥 ${escapeHTML(
+                          food.calories
+                        )} kcal · `
+                      : ""
+                  }
+
+                  ${escapeHTML(
+                    food.category
+                  )}
+
+                </div>
+
+              </div>
+
+
+
+              <button
+                class="
+                  pick-button
+                  ${isPicked ? "picked" : ""}
+                "
+                onclick="
+                  event.stopPropagation();
+
+                  togglePick('${food.id}');
+                "
+              >
+
+                ${
+                  isPicked
+                    ? "✓ 已点"
+                    : "我点"
+                }
+
+              </button>
+
+            </div>
+
+          </div>
+
+        `;
+
       })
-    }
-  );
+      .join("");
 
-  if(response.ok){
-
-    alert("食谱已经保存 ❤️");
-
-    document.getElementById("name").value="";
-    document.getElementById("ingredients").value="";
-    document.getElementById("instructions").value="";
-
-    await loadRecipes();
-
-    page("recipes",document.querySelectorAll("nav button")[2]);
-
-  }else{
-
-    alert("保存失败，请检查 Supabase 设置。");
-
-  }
 }
+
 
 
 /* =========================
-   页面切换
-   ========================= */
+   我点
+========================= */
 
-function page(id,button){
+function togglePick(foodId) {
 
-  ["order","today","recipes","add"].forEach(x=>{
-    document.getElementById(x).classList.add("hidden");
-  });
+  const food =
+    foods.find(
+      item =>
+        item.id === foodId
+    );
 
-  document.getElementById(id).classList.remove("hidden");
 
-  document.querySelectorAll("nav button").forEach(b=>{
-    b.classList.remove("active");
-  });
+  if (!food) {
 
-  button.classList.add("active");
+    return;
 
-  if(id==="today"){
-    loadToday();
   }
+
+
+
+  const existingIndex =
+    todayMenu.findIndex(
+      item =>
+        item.foodId === foodId
+    );
+
+
+
+  /* 已经点了 → 取消 */
+
+  if (
+    existingIndex !== -1
+  ) {
+
+    todayMenu.splice(
+      existingIndex,
+      1
+    );
+
+  }
+
+  /* 第一次点 */
+
+  else {
+
+    const today =
+      getToday();
+
+
+    todayMenu.push({
+
+      foodId:
+        food.id,
+
+      name:
+        food.name,
+
+      category:
+        food.category,
+
+      date:
+        today
+
+    });
+
+
+
+    /* 保存点菜记录 */
+
+    orderRecords.unshift({
+
+      id:
+        Date.now().toString(),
+
+      foodId:
+        food.id,
+
+      name:
+        food.name,
+
+      category:
+        food.category,
+
+      date:
+        today
+
+    });
+
+  }
+
+
+  saveData();
+
+
+  renderFoods();
+
 }
 
-
-/* =========================
-   点菜
-   ========================= */
-
-function orderFood(id){
-
-  const recipe=recipes.find(r=>String(r.id)===String(id));
-
-  if(!recipe)return;
-
-  let today=JSON.parse(
-    localStorage.getItem("todayOrders") || "[]"
-  );
-
-  today.push({
-    name:recipe.name,
-    time:new Date().toLocaleTimeString("zh-CN",{
-      hour:"2-digit",
-      minute:"2-digit"
-    })
-  });
-
-  localStorage.setItem(
-    "todayOrders",
-    JSON.stringify(today)
-  );
-
-  alert(recipe.name + " 已加入今日菜单 ❤️");
-
-  loadToday();
-}
 
 
 /* =========================
    今日菜单
-   ========================= */
+========================= */
 
-function loadToday(){
+function renderTodayMenu() {
 
-  const box=document.getElementById("todayList");
+  const list =
+    document.getElementById(
+      "todayList"
+    );
 
-  const today=JSON.parse(
-    localStorage.getItem("todayOrders") || "[]"
+
+  let html = "";
+
+
+  const categories = [
+    "早餐",
+    "午餐",
+    "晚餐"
+  ];
+
+
+
+  categories.forEach(
+    category => {
+
+      const items =
+        todayMenu.filter(
+          item =>
+            item.category ===
+            category
+        );
+
+
+      const icon =
+        category === "早餐"
+          ? "🥣"
+          : category === "午餐"
+            ? "🍱"
+            : "🍲";
+
+
+      html += `
+
+        <h3>
+
+          ${icon} ${category}
+
+        </h3>
+
+      `;
+
+
+
+      if (
+        items.length === 0
+      ) {
+
+        html += `
+
+          <div
+            class="empty"
+            style="
+              padding:15px;
+            "
+          >
+
+            今天还没有选择
+
+          </div>
+
+        `;
+
+      }
+
+      else {
+
+        items.forEach(
+          item => {
+
+            html += `
+
+              <div
+                class="record-item"
+              >
+
+                ${escapeHTML(
+                  item.name
+                )}
+
+
+                <button
+                  class="cancel-pick"
+                  onclick="
+                    removeTodayPick(
+                      '${item.foodId}'
+                    )
+                  "
+                >
+
+                  取消
+
+                </button>
+
+              </div>
+
+            `;
+
+          }
+
+        );
+
+      }
+
+    }
+
   );
 
-  if(today.length===0){
 
-    box.innerHTML=
-      '<div class="empty">今天还没有人点菜 😊</div>';
+  list.innerHTML =
+    html;
+
+}
+
+
+
+/* =========================
+   取消今日菜单
+========================= */
+
+function removeTodayPick(
+  foodId
+) {
+
+  todayMenu =
+    todayMenu.filter(
+      item =>
+        item.foodId !==
+        foodId
+    );
+
+
+  saveData();
+
+
+  renderTodayMenu();
+
+
+  renderFoods();
+
+}
+
+
+
+/* =========================
+   点菜记录
+========================= */
+
+function renderRecords() {
+
+  const list =
+    document.getElementById(
+      "recordList"
+    );
+
+
+  if (
+    orderRecords.length === 0
+  ) {
+
+    list.innerHTML = `
+
+      <div class="empty">
+
+        还没有点菜记录
+
+      </div>
+
+    `;
 
     return;
+
   }
 
-  box.innerHTML=today.map((x,i)=>`
 
-    <div class="card">
 
-      <h2>🍽️ ${escapeHtml(x.name)}</h2>
+  const groups = {};
 
-      <p>点菜时间：${escapeHtml(x.time)}</p>
 
-      <button class="delete"
-        onclick="removeOrder(${i})">
-        取消
-      </button>
 
-    </div>
+  orderRecords.forEach(
+    record => {
 
-  `).join("");
+      if (
+        !groups[record.date]
+      ) {
+
+        groups[record.date] =
+          [];
+
+      }
+
+
+      groups[
+        record.date
+      ].push(record);
+
+    }
+
+  );
+
+
+
+  const dates =
+    Object.keys(groups)
+      .sort()
+      .reverse();
+
+
+
+  let html = "";
+
+
+
+  dates.forEach(
+    date => {
+
+      html += `
+
+        <div class="card">
+
+          <h3>
+
+            📅 ${date}
+
+          </h3>
+
+      `;
+
+
+      const categories = [
+        "早餐",
+        "午餐",
+        "晚餐"
+      ];
+
+
+      categories.forEach(
+        category => {
+
+          groups[date]
+            .filter(
+              item =>
+                item.category ===
+                category
+            )
+            .forEach(
+              item => {
+
+                html += `
+
+                  <div
+                    class="record-item"
+                  >
+
+                    ${escapeHTML(
+                      category
+                    )}
+
+                    ·
+
+                    ${escapeHTML(
+                      item.name
+                    )}
+
+                  </div>
+
+                `;
+
+              }
+            );
+
+        }
+      );
+
+
+      html += `
+
+        </div>
+
+      `;
+
+    }
+
+  );
+
+
+  list.innerHTML =
+    html;
+
 }
 
 
-function removeOrder(index){
 
-  let today=JSON.parse(
-    localStorage.getItem("todayOrders") || "[]"
-  );
+/* =========================
+   增加食物
+========================= */
 
-  today.splice(index,1);
+function openAddFood() {
+
+  currentFoodId =
+    null;
+
+
+  document
+    .getElementById(
+      "foodModalTitle"
+    )
+    .textContent =
+      "＋ 增加食物";
+
+
+  clearFoodForm();
+
+
+  document
+    .getElementById(
+      "foodModal"
+    )
+    .classList.add("show");
+
+}
+
+
+
+/* =========================
+   清空
+========================= */
+
+function clearFoodForm() {
+
+  document
+    .getElementById(
+      "foodName"
+    )
+    .value = "";
+
+
+  document
+    .getElementById(
+      "foodCategory"
+    )
+    .value =
+      "早餐";
+
+
+  document
+    .getElementById(
+      "foodCalories"
+    )
+    .value = "";
+
+
+  document
+    .getElementById(
+      "foodIngredients"
+    )
+    .value = "";
+
+
+  document
+    .getElementById(
+      "foodMethod"
+    )
+    .value = "";
+
+
+  document
+    .getElementById(
+      "foodLink"
+    )
+    .value = "";
+
+}
+
+
+
+/* =========================
+   保存食物
+========================= */
+
+function saveFood() {
+
+  const name =
+    document
+      .getElementById(
+        "foodName"
+      )
+      .value
+      .trim();
+
+
+  if (!name) {
+
+    alert(
+      "请输入食物名称"
+    );
+
+    return;
+
+  }
+
+
+
+  const food = {
+
+    id:
+      currentFoodId ||
+      Date.now().toString(),
+
+    name:
+      name,
+
+    category:
+      document
+        .getElementById(
+          "foodCategory"
+        )
+        .value,
+
+    calories:
+      document
+        .getElementById(
+          "foodCalories"
+        )
+        .value
+        .trim(),
+
+    ingredients:
+      document
+        .getElementById(
+          "foodIngredients"
+        )
+        .value
+        .trim(),
+
+    method:
+      document
+        .getElementById(
+          "foodMethod"
+        )
+        .value
+        .trim(),
+
+    link:
+      document
+        .getElementById(
+          "foodLink"
+        )
+        .value
+        .trim()
+
+  };
+
+
+
+  /* 编辑 */
+
+  if (
+    currentFoodId
+  ) {
+
+    const index =
+      foods.findIndex(
+        item =>
+          item.id ===
+          currentFoodId
+      );
+
+
+    if (
+      index !== -1
+    ) {
+
+      foods[index] =
+        food;
+
+    }
+
+  }
+
+  /* 新增 */
+
+  else {
+
+    foods.push(
+      food
+    );
+
+  }
+
+
+
+  saveData();
+
+
+  closeFoodModal();
+
+
+  renderFoods();
+
+}
+
+
+
+/* =========================
+   食物详情
+========================= */
+
+function openFoodDetail(
+  foodId
+) {
+
+  currentFoodId =
+    foodId;
+
+
+  const food =
+    foods.find(
+      item =>
+        item.id ===
+        foodId
+    );
+
+
+  if (!food) {
+
+    return;
+
+  }
+
+
+
+  document
+    .getElementById(
+      "detailName"
+    )
+    .textContent =
+      food.name;
+
+
+  document
+    .getElementById(
+      "detailInfo"
+    )
+    .textContent =
+      (
+        food.calories
+          ? `🔥 ${food.calories} kcal · `
+          : ""
+      )
+      +
+      food.category;
+
+
+  document
+    .getElementById(
+      "detailIngredients"
+    )
+    .textContent =
+      food.ingredients ||
+      "没有填写";
+
+
+  document
+    .getElementById(
+      "detailMethod"
+    )
+    .textContent =
+      food.method ||
+      "没有填写";
+
+
+
+  const link =
+    document
+      .getElementById(
+        "detailLink"
+      );
+
+
+  if (
+    food.link
+  ) {
+
+    link.textContent =
+      food.link;
+
+    link.href =
+      food.link;
+
+    link.style.pointerEvents =
+      "auto";
+
+  }
+
+  else {
+
+    link.textContent =
+      "没有填写";
+
+    link.removeAttribute(
+      "href"
+    );
+
+    link.style.pointerEvents =
+      "none";
+
+  }
+
+
+
+  document
+    .getElementById(
+      "detailModal"
+    )
+    .classList.add(
+      "show"
+    );
+
+}
+
+
+
+/* =========================
+   编辑
+========================= */
+
+function editFood() {
+
+  const food =
+    foods.find(
+      item =>
+        item.id ===
+        currentFoodId
+    );
+
+
+  if (!food) {
+
+    return;
+
+  }
+
+
+  closeDetail();
+
+
+  document
+    .getElementById(
+      "foodModalTitle"
+    )
+    .textContent =
+      "✏️ 编辑食物";
+
+
+  document
+    .getElementById(
+      "foodName"
+    )
+    .value =
+      food.name;
+
+
+  document
+    .getElementById(
+      "foodCategory"
+    )
+    .value =
+      food.category;
+
+
+  document
+    .getElementById(
+      "foodCalories"
+    )
+    .value =
+      food.calories ||
+      "";
+
+
+  document
+    .getElementById(
+      "foodIngredients"
+    )
+    .value =
+      food.ingredients ||
+      "";
+
+
+  document
+    .getElementById(
+      "foodMethod"
+    )
+    .value =
+      food.method ||
+      "";
+
+
+  document
+    .getElementById(
+      "foodLink"
+    )
+    .value =
+      food.link ||
+      "";
+
+
+  document
+    .getElementById(
+      "foodModal"
+    )
+    .classList.add(
+      "show"
+    );
+
+}
+
+
+
+/* =========================
+   删除
+========================= */
+
+function deleteFood() {
+
+  if (
+    !confirm(
+      "确定要删除这个食物吗？"
+    )
+  ) {
+
+    return;
+
+  }
+
+
+
+  foods =
+    foods.filter(
+      food =>
+        food.id !==
+        currentFoodId
+    );
+
+
+
+  todayMenu =
+    todayMenu.filter(
+      item =>
+        item.foodId !==
+        currentFoodId
+    );
+
+
+
+  saveData();
+
+
+  closeDetail();
+
+
+  renderFoods();
+
+}
+
+
+
+/* =========================
+   关闭
+========================= */
+
+function closeFoodModal() {
+
+  document
+    .getElementById(
+      "foodModal"
+    )
+    .classList.remove(
+      "show"
+    );
+
+}
+
+
+function closeDetail() {
+
+  document
+    .getElementById(
+      "detailModal"
+    )
+    .classList.remove(
+      "show"
+    );
+
+}
+
+
+
+/* =========================
+   保存资料
+========================= */
+
+function saveData() {
 
   localStorage.setItem(
-    "todayOrders",
-    JSON.stringify(today)
+    "dietFoods",
+    JSON.stringify(
+      foods
+    )
   );
 
-  loadToday();
+
+  localStorage.setItem(
+    "dietTodayMenu",
+    JSON.stringify(
+      todayMenu
+    )
+  );
+
+
+  localStorage.setItem(
+    "dietOrderRecords",
+    JSON.stringify(
+      orderRecords
+    )
+  );
+
 }
 
 
+
 /* =========================
-   防止输入内容破坏网页
-   ========================= */
+   防止 HTML 问题
+========================= */
 
-function escapeHtml(text){
+function escapeHTML(
+  text
+) {
 
-  return String(text)
-    .replaceAll("&","&amp;")
-    .replaceAll("<","&lt;")
-    .replaceAll(">","&gt;")
-    .replaceAll('"',"&quot;")
-    .replaceAll("'","&#039;");
+  return String(
+    text || ""
+  ).replace(
+    /[&<>"']/g,
+    character => ({
+
+      "&": "&amp;",
+
+      "<": "&lt;",
+
+      ">": "&gt;",
+
+      '"': "&quot;",
+
+      "'": "&#39;"
+
+    })[character]
+  );
+
 }
 
 
-/* =========================
-   开始
-   ========================= */
 
-loadRecipes();
+/* =========================
+   启动
+========================= */
+
+renderFoods();
 
 </script>
 
 </body>
-</html>
+</html>  
