@@ -183,10 +183,33 @@ button{cursor:pointer}
 <div id="workTaskModal" class="modal">
   <div class="sheet">
     <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">☑️ 添加工作</h2><button class="smallBtn" onclick="closeWorkTaskForm()">✕</button></div>
-    <label>日期</label><input id="wtDate" type="date">
-    <label>工作内容</label><input id="wtTitle" placeholder="例如：Follow up credit form">
+    <label>工作内容</label><input id="wtTitle" placeholder="例如：开发票">
     <label>备注</label><textarea id="wtNotes" rows="3" placeholder="可不填"></textarea>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input id="wtToday" type="checkbox" checked style="width:auto"> 加入今天做工列表</label>
+
+    <label>执行方式</label>
+    <select id="wtType" onchange="toggleWorkScheduleFields()">
+      <option value="once">单次工作</option>
+      <option value="weekly">每周固定</option>
+    </select>
+
+    <div id="wtOnceFields">
+      <label>做工日期</label><input id="wtDate" type="date">
+    </div>
+
+    <div id="wtWeeklyFields" class="hidden">
+      <label>固定星期</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">
+        <label class="smallBtn"><input class="wtDay" type="checkbox" value="1" style="width:auto"> 一</label>
+        <label class="smallBtn"><input class="wtDay" type="checkbox" value="2" style="width:auto"> 二</label>
+        <label class="smallBtn"><input class="wtDay" type="checkbox" value="3" style="width:auto"> 三</label>
+        <label class="smallBtn"><input class="wtDay" type="checkbox" value="4" style="width:auto"> 四</label>
+        <label class="smallBtn"><input class="wtDay" type="checkbox" value="5" style="width:auto"> 五</label>
+        <label class="smallBtn"><input class="wtDay" type="checkbox" value="6" style="width:auto"> 六</label>
+        <label class="smallBtn"><input class="wtDay" type="checkbox" value="0" style="width:auto"> 日</label>
+      </div>
+      <button type="button" class="smallBtn" style="margin-top:8px" onclick="selectWeekdays()">一键选工作日（一至五）</button>
+    </div>
+
     <button class="save" style="width:100%;margin-top:14px" onclick="saveWorkTask()">保存工作</button>
   </div>
 </div>
@@ -300,38 +323,72 @@ function saveWorkMemo(){
  if(editingWorkMemo){const i=records.findIndex(x=>x.id===editingWorkMemo); if(i>=0)obj.created=records[i].created||Date.now(),records[i]=obj}else records.push(obj);
  saveAll();closeWorkMemoForm();currentFilter='work';render();
 }
+function toggleWorkScheduleFields(){
+ const weekly=$('wtType').value==='weekly';
+ $('wtOnceFields').classList.toggle('hidden',weekly);
+ $('wtWeeklyFields').classList.toggle('hidden',!weekly);
+}
+function selectWeekdays(){
+ document.querySelectorAll('.wtDay').forEach(x=>x.checked=['1','2','3','4','5'].includes(x.value));
+}
 function openWorkTaskForm(id=null){
  editingWorkTask=id;
  const r=id?records.find(x=>x.id===id):null;
- $('wtDate').value=r?.date||localToday();
  $('wtTitle').value=r?.title||'';
  $('wtNotes').value=r?.notes||'';
- $('wtToday').checked=r?!!r.inToday:true;
+ $('wtType').value=r?.repeatType==='weekly'?'weekly':'once';
+ $('wtDate').value=r?.date||localToday();
+ document.querySelectorAll('.wtDay').forEach(x=>x.checked=(r?.weekdays||[]).map(String).includes(x.value));
+ toggleWorkScheduleFields();
  $('workTaskModal').classList.add('show');
 }
 function closeWorkTaskForm(){$('workTaskModal').classList.remove('show')}
 function saveWorkTask(){
  const title=$('wtTitle').value.trim(); if(!title){alert('请填写工作内容');return}
+ const type=$('wtType').value;
+ const weekdays=[...document.querySelectorAll('.wtDay:checked')].map(x=>Number(x.value));
+ if(type==='weekly'&&!weekdays.length){alert('请选择至少一个星期');return}
  const old=editingWorkTask?records.find(x=>x.id===editingWorkTask):null;
- const obj={id:editingWorkTask||('wt_'+Date.now()),category:'workTask',date:$('wtDate').value||localToday(),title,notes:$('wtNotes').value.trim(),inToday:$('wtToday').checked,done:old?.done||false,created:old?.created||Date.now()};
+ const obj={
+   id:editingWorkTask||('wt_'+Date.now()),category:'workTask',
+   title,notes:$('wtNotes').value.trim(),
+   repeatType:type,
+   date:type==='once'?($('wtDate').value||localToday()):'',
+   weekdays:type==='weekly'?weekdays:[],
+   done: type==='once'?(old?.done||false):false,
+   completedDates: old?.completedDates||[],
+   created:old?.created||Date.now()
+ };
  if(editingWorkTask){const i=records.findIndex(x=>x.id===editingWorkTask);if(i>=0)records[i]=obj}else records.push(obj);
  saveAll();closeWorkTaskForm();currentFilter='work';render();
 }
+
 function deleteWork(id){
  if(confirm('确定删除这项工作吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}
 }
 function completeWork(id){
- const r=records.find(x=>x.id===id);if(!r)return;r.done=true;r.completedAt=Date.now();saveAll();render();
+ const r=records.find(x=>x.id===id);if(!r)return;
+ if(r.repeatType==='weekly'){
+   r.completedDates=r.completedDates||[];
+   const t=localToday(); if(!r.completedDates.includes(t))r.completedDates.push(t);
+ }else r.done=true;
+ saveAll();render();
 }
 function undoWork(id){
- const r=records.find(x=>x.id===id);if(!r)return;r.done=false;delete r.completedAt;saveAll();render();
+ const r=records.find(x=>x.id===id);if(!r)return;
+ if(r.repeatType==='weekly'){
+   r.completedDates=(r.completedDates||[]).filter(x=>x!==localToday());
+ }else r.done=false;
+ saveAll();render();
 }
 function moveTomorrow(id){
  const r=records.find(x=>x.id===id);if(!r)return;
+ if(r.repeatType==='weekly'){alert('固定工作会按照你选择的星期自动出现。');return}
  const d=new Date();d.setDate(d.getDate()+1);
  r.date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
- r.inToday=false;saveAll();render();
+ saveAll();render();
 }
+
 function renderTodayWork(){
  const today=localToday();$('todayWorkDate').textContent=today;
  const tasks=records.filter(r=>r.category==='workTask'&&r.inToday&&r.date===today);
@@ -345,31 +402,42 @@ function renderTodayWork(){
 
 function renderTodayWorkMain(){
  const today=localToday();
- const tasks=records.filter(r=>r.category==='workTask'&&r.inToday&&r.date===today);
- const pending=tasks.filter(r=>!r.done), done=tasks.filter(r=>r.done);
+ const dow=new Date(today+'T12:00:00').getDay();
+ const tasks=records.filter(r=>{
+   if(r.category!=='workTask')return false;
+   if(r.repeatType==='weekly')return (r.weekdays||[]).includes(dow);
+   return r.date===today;
+ }).map(r=>{
+   const isDone=r.repeatType==='weekly'?(r.completedDates||[]).includes(today):!!r.done;
+   return {r,isDone};
+ });
+ const pending=tasks.filter(x=>!x.isDone), done=tasks.filter(x=>x.isDone);
  $('count').textContent=tasks.length+' 条';
- const item=(r,isDone)=>`<div class="card medCompact">
+ const dayNames=['日','一','二','三','四','五','六'];
+ const item=(x)=>{const r=x.r,isDone=x.isDone;return `<div class="card medCompact">
    <div style="display:flex;gap:9px;align-items:flex-start">
      <span style="font-size:18px">${isDone?'✅':'○'}</span>
      <div style="flex:1;min-width:0">
        <b style="${isDone?'text-decoration:line-through;opacity:.65':''}">${esc(r.title)}</b>
+       ${r.repeatType==='weekly'?`<div class="date" style="margin-top:3px">固定：${(r.weekdays||[]).map(d=>dayNames[d]).join('・')}</div>`:''}
        ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
        <div class="actions" style="margin-top:8px">
          ${isDone
            ?`<button class="smallBtn" onclick="undoWork('${r.id}')">↩ 未完成</button>`
-           :`<button class="smallBtn" onclick="completeWork('${r.id}')">✓ 完成</button><button class="smallBtn" onclick="moveTomorrow('${r.id}')">明天再做</button>`}
+           :`<button class="smallBtn" onclick="completeWork('${r.id}')">✓ 完成</button>${r.repeatType==='weekly'?'':`<button class="smallBtn" onclick="moveTomorrow('${r.id}')">明天再做</button>`}`}
          <button class="smallBtn" onclick="openWorkTaskForm('${r.id}')">✏️</button>
        </div>
      </div>
    </div>
- </div>`;
+ </div>`};
  $('list').innerHTML=
-   `<div style="font-size:13px;color:#8b7c6c;margin:0 2px 10px">${today}</div>
+   `<div style="font-size:13px;color:#8b7c6c;margin:0 2px 10px">${today}　星期${dayNames[dow]}</div>
     <h3 style="margin:8px 2px">未完成 <span class="count">${pending.length}</span></h3>
-    ${pending.length?pending.map(r=>item(r,false)).join(''):'<div class="note" style="padding:10px 2px">今天没有未完成工作 🎉</div>'}
+    ${pending.length?pending.map(item).join(''):'<div class="note" style="padding:10px 2px">今天没有未完成工作 🎉</div>'}
     <h3 style="margin:20px 2px 8px">已完成 ✅ <span class="count">${done.length}</span></h3>
-    ${done.length?done.map(r=>item(r,true)).join(''):'<div class="note" style="padding:10px 2px">还没有完成项目</div>'}`;
+    ${done.length?done.map(item).join(''):'<div class="note" style="padding:10px 2px">还没有完成项目</div>'}`;
 }
+
 function render(){
  if(currentFilter==='todayWork'){ renderTodayWorkMain(); return; }
 
@@ -449,7 +517,9 @@ function render(){
      return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">📝 Memo</span><span class="date" style="margin-left:7px">${esc(r.date||'')}</span><h3>${esc(r.title||'Memo')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openWorkMemoForm('${r.id}')">✏️ 编辑</button><button onclick="deleteWork('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
    }
    if(r.category==='workTask'){
-     return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">☑️ 工作</span><span class="date" style="margin-left:7px">${esc(r.date||'')}</span><h3 style="${r.done?'text-decoration:line-through;opacity:.65':''}">${r.done?'✅ ':''}${esc(r.title||'工作')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openWorkTaskForm('${r.id}')">✏️ 编辑</button><button onclick="deleteWork('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
+     const dn=['日','一','二','三','四','五','六'];
+     const schedule=r.repeatType==='weekly'?'固定：'+(r.weekdays||[]).map(d=>dn[d]).join('・'):(r.date||'');
+     return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">☑️ 工作</span><span class="date" style="margin-left:7px">${esc(schedule)}</span><h3 style="${r.done?'text-decoration:line-through;opacity:.65':''}">${r.done?'✅ ':''}${esc(r.title||'工作')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openWorkTaskForm('${r.id}')">✏️ 编辑</button><button onclick="deleteWork('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
    }
 
    return `<div class="card">
