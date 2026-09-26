@@ -69,9 +69,14 @@ button{cursor:pointer}
     <button class="tab" data-filter="other" onclick="setFilter('other',this)">📝 其他</button>
   </div>
 
-  <div id="medicalActions" class="hidden" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px">
-    <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openMedicalRecordForm()">＋ 看医生</button>
-    <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openPackageForm()">＋ 配套</button>
+  <div id="medicalActions" class="hidden" style="margin:10px 0 14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openMedicalRecordForm()">＋ 看医生</button>
+      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openPackageForm()">＋ 配套</button>
+    </div>
+    <div style="text-align:right;margin-top:8px">
+      <button class="smallBtn" onclick="openMoneyModal()">💰 金钱</button>
+    </div>
   </div>
 
   <div class="sectionHead"><b id="listTitle">最近记录</b><span id="count" class="count"></span></div>
@@ -131,6 +136,18 @@ button{cursor:pointer}
       <div class="field full"><label>备注</label><textarea id="medicalNotes" placeholder="想记录的内容"></textarea></div>
     </div>
     <div class="modalBtns"><button class="cancel" onclick="closeMedicalRecordForm()">取消</button><button class="save" onclick="saveMedicalRecord()">保存</button></div>
+  </div>
+</div>
+
+
+<div id="moneyModal" class="modal">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2 style="margin:0">💰 医疗金钱记录</h2>
+      <button class="smallBtn" onclick="closeMoneyModal()">✕</button>
+    </div>
+    <div id="moneyList" style="margin-top:15px"></div>
+    <div id="moneyTotal" style="margin-top:14px;padding:14px;background:#f6ead7;border-radius:14px;font-size:18px;font-weight:800"></div>
   </div>
 </div>
 
@@ -239,7 +256,6 @@ function render(){
    if(r.category==='medicalRecord'){
      return `<div class="card">
        <div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'看医生')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
-       ${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}
        ${r.notes?`<div class="meta"><b>📝 备注</b><br>${esc(r.notes)}</div>`:''}
        <div class="actions">
          <button class="smallBtn" onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button>
@@ -259,7 +275,6 @@ function render(){
          <div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3></div>
          <div class="date">${complete?'✅ 已完成':'使用中'}</div>
        </div>
-       ${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}
        <div class="meta">
          <b>拉腰 / 拉颈项：${su} / ${st}</b><br>
          <b>Chiro：${cu} / ${ct}</b>
@@ -350,6 +365,24 @@ function deletePackage(id){
     render();
   }
 }
+
+
+function amountNum(v){
+ const n=parseFloat(String(v||'').replace(/[^0-9.-]/g,''));
+ return isNaN(n)?0:n;
+}
+function openMoneyModal(){
+ const arr=records.filter(r=>(r.category==='medicalRecord'||r.category==='package')&&amountNum(r.amount)>0)
+   .sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
+ const total=arr.reduce((n,r)=>n+amountNum(r.amount),0);
+ $('moneyList').innerHTML=arr.length?arr.map(r=>`<div style="display:flex;justify-content:space-between;gap:14px;padding:12px 2px;border-bottom:1px solid #eee2d3">
+   <div><b>${esc(r.title||'医疗')}</b><div style="font-size:12px;color:#8b7c6c;margin-top:3px">${r.category==='package'?'配套':'看医生'} · ${esc(r.date||'')}</div></div>
+   <b>${esc(r.amount)}</b>
+ </div>`).join(''):'<div class="empty">还没有金额记录</div>';
+ $('moneyTotal').textContent='总金额：'+total.toFixed(2);
+ $('moneyModal').classList.add('show');
+}
+function closeMoneyModal(){$('moneyModal').classList.remove('show')}
 
 function startSession(id){
  currentPackageId=id;
