@@ -84,8 +84,8 @@ button{cursor:pointer}
 
   <div id="medicalActions" class="hidden" style="display:none;margin:10px 0 14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openMedicalRecordForm()">＋ 看医生</button>
-      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openPackageForm()">＋ 配套</button>
+      <button id="doctorActionBtn" class="save" style="border:0;border-radius:14px;padding:13px" onclick="openMedicalRecordForm()">＋ 看医生</button>
+      <button id="packageActionBtn" class="save" style="border:0;border-radius:14px;padding:13px" onclick="openPackageForm()">＋ 配套</button>
     </div>
     <div style="text-align:right;margin-top:8px">
       <button class="smallBtn" onclick="openMoneyModal()">💰 金钱</button>
@@ -194,6 +194,12 @@ button{cursor:pointer}
   <label style="display:block;margin:12px 0 6px">名称</label>
   <input id="spTitle" style="width:100%" placeholder="例如：妈妈生日">
 
+  <div id="medicalButtonNameFields" class="hidden">
+   <label style="display:block;margin:12px 0 6px">「＋ 看医生」按钮名称</label>
+   <input id="pageDoctorButtonName" style="width:100%" placeholder="例如：＋ 看医生">
+   <label style="display:block;margin:12px 0 6px">「＋ 配套」按钮名称</label>
+   <input id="pagePackageButtonName" style="width:100%" placeholder="例如：＋ 配套">
+  </div>
   <label style="display:block;margin:12px 0 6px">分类</label>
   <select id="spType" style="width:100%">
     <option value="birthday">🎂 生日</option>
@@ -248,7 +254,7 @@ button{cursor:pointer}
   <label style="display:block;margin:12px 0 6px">图标</label>
   <input id="pageIcon" style="width:100%" placeholder="例如：🐶" maxlength="4">
   <label style="display:block;margin:12px 0 6px">Layout</label>
-  <select id="pageLayout" style="width:100%">
+  <select id="pageLayout" style="width:100%" onchange="toggleMedicalButtonNameFields()">
    <option value="normal">📝 普通记录</option>
    <option value="medical">🏥 医疗 Layout</option>
    <option value="checklist">🛒 清单 Layout</option>
@@ -355,6 +361,8 @@ function setFilter(f,btn){
  const special=f==='special'||(custom&&layout==='special');
  const shopping=f==='shopping'||(custom&&layout==='checklist');
  const normalCustom=custom&&layout==='normal';
+ if($('doctorActionBtn')) $('doctorActionBtn').textContent=(custom&&layout==='medical'?(cp.doctorButtonName||'＋ 看医生'):'＋ 看医生');
+ if($('packageActionBtn')) $('packageActionBtn').textContent=(custom&&layout==='medical'?(cp.packageButtonName||'＋ 配套'):'＋ 配套');
   const builtinCopy=['life','medical','special','shopping'].includes(f);
   if($('builtinCopyActions')) $('builtinCopyActions').style.display=builtinCopy?'block':'none';
 
@@ -403,15 +411,22 @@ function renderCustomTabs(){
  box.innerHTML=customPages.map(p=>`<button class="tab" onclick="setFilter('custom:${p.id}',this)">${esc(p.icon||'📌')} ${esc(p.name)}</button>`).join('');
 }
 
+function toggleMedicalButtonNameFields(){
+ const box=$('medicalButtonNameFields');if(!box)return;
+ box.classList.toggle('hidden',$('pageLayout').value!=='medical');
+}
 function openAddPageForm(){
  $('pageName').value='';$('pageIcon').value='';$('pageLayout').value='normal';$('pageCategories').value='';
+ $('pageDoctorButtonName').value='';$('pagePackageButtonName').value='';toggleMedicalButtonNameFields();
  $('addPageModal').classList.add('show');
 }
 function closeAddPageForm(){$('addPageModal').classList.remove('show')}
 function saveCustomPage(){
  const name=$('pageName').value.trim();if(!name){alert('请填写页面名称');return}
  const cats=$('pageCategories').value.split(/[，,]/).map(x=>x.trim()).filter(Boolean);
- customPages.push({id:'p'+Date.now(),icon:$('pageIcon').value.trim()||'📌',name,layout:$('pageLayout').value,categories:cats});
+ customPages.push({id:'p'+Date.now(),icon:$('pageIcon').value.trim()||'📌',name,layout:$('pageLayout').value,categories:cats,
+  doctorButtonName:$('pageDoctorButtonName').value.trim()||'＋ 看医生',
+  packageButtonName:$('pagePackageButtonName').value.trim()||'＋ 配套'});
  saveCustomPages();renderCustomTabs();closeAddPageForm();
 }
 
@@ -521,17 +536,15 @@ function copyCurrentPage(){
  if(entered===null)return;
  name=entered.trim();if(!name){alert('请填写页面名称');return}
  const newId='p'+Date.now();
- customPages.push({id:newId,icon,name,layout,categories});
- const stamp=Date.now();
- sourceRecords.forEach((r,i)=>{
-   const c=JSON.parse(JSON.stringify(r));
-   c.id='copy'+stamp+'_'+i;
-   c.customPageId=newId;
-   c.created=stamp+i;
-   // Life records need to become generic custom records so the copied normal page can display them.
-   if(currentFilter==='life') c.category='custom';
-   records.push(c);
- });
+ let doctorButtonName='＋ 看医生',packageButtonName='＋ 配套';
+ if(layout==='medical'){
+   const d=prompt('「＋ 看医生」要改成什么名字？',doctorButtonName);
+   if(d!==null&&d.trim())doctorButtonName=d.trim();
+   const pk=prompt('「＋ 配套」要改成什么名字？',packageButtonName);
+   if(pk!==null&&pk.trim())packageButtonName=pk.trim();
+ }
+ customPages.push({id:newId,icon,name,layout,categories,doctorButtonName,packageButtonName});
+ // 只复制页面的 Layout / 结构，不复制原页面以前的资料。
  saveCustomPages();saveAll();renderCustomTabs();
  currentFilter='custom:'+newId;
  const btn=[...document.querySelectorAll('#customTabs .tab')].find(x=>x.getAttribute('onclick')?.includes(newId));
@@ -551,21 +564,13 @@ function copyCurrentCustomPage(){
   icon:p.icon||'📌',
   name,
   layout:p.layout||'normal',
-  categories:Array.isArray(p.categories)?[...p.categories]:[]
+  categories:Array.isArray(p.categories)?[...p.categories]:[],
+  doctorButtonName:p.doctorButtonName||'＋ 看医生',
+  packageButtonName:p.packageButtonName||'＋ 配套'
  };
  customPages.push(copy);
 
- // 复制页面本身，也复制页面内现有记录；每条记录使用新的 id，避免影响原页面。
- const sourceRecords=records.filter(r=>r.customPageId===p.id);
- const stamp=Date.now();
- sourceRecords.forEach((r,i)=>{
-  const cloned=JSON.parse(JSON.stringify(r));
-  cloned.id='copy'+stamp+'_'+i;
-  cloned.customPageId=newId;
-  cloned.created=stamp+i;
-  records.push(cloned);
- });
-
+ // 只复制页面 Layout / 分类设置，不复制页面内旧资料。
  saveCustomPages();saveAll();renderCustomTabs();
  currentFilter='custom:'+newId;
  const newBtn=[...document.querySelectorAll('#customTabs .tab')].find(x=>x.getAttribute('onclick')?.includes(newId));
