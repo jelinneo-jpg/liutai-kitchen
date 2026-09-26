@@ -773,20 +773,15 @@ function openMoneyModal(pageId){
  const scopeId=pageId||null;
  const arr=records.filter(r=>{
    if(!(r.category==='medicalRecord'||r.category==='package')||amountNum(r.amount)<=0)return false;
-   if(scopeId) return String(r.customPageId||'')===String(scopeId);
-   return !r.customPageId;
+   return scopeId ? String(r.customPageId||'')===String(scopeId) : !r.customPageId;
  }).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
 
  const total=arr.reduce((n,r)=>n+amountNum(r.amount),0);
- $('moneyTotal').textContent=money(total);
- $('moneyList').innerHTML=arr.length?arr.map(r=>`
-   <div class="moneyRow">
-     <div>
-       <b>${esc(r.title||'未命名')}</b>
-       <div class="meta">${esc(r.date||'')}${r.category==='package'?' · 配套':' · 看医生'}</div>
-     </div>
-     <b>${money(amountNum(r.amount))}</b>
-   </div>`).join(''):'<div class="empty">还没有金额记录</div>';
+ $('moneyList').innerHTML=arr.length?arr.map(r=>`<div style="display:flex;justify-content:space-between;gap:14px;padding:12px 2px;border-bottom:1px solid #eee2d3">
+   <div><b>${esc(r.title||'医疗')}</b><div style="font-size:12px;color:#8b7c6c;margin-top:3px">${r.category==='package'?'配套':'看医生'} · ${esc(r.date||'')}</div></div>
+   <b>${esc(r.amount)}</b>
+ </div>`).join(''):'<div class="empty">还没有金额记录</div>';
+ $('moneyTotal').textContent='总金额：'+total.toFixed(2);
  $('moneyModal').classList.add('show');
 }
 function closeMoneyModal(){$('moneyModal').classList.remove('show')}
