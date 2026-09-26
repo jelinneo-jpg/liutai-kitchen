@@ -95,7 +95,7 @@ button{cursor:pointer}
   </div>
 
   <div id="shoppingActions" class="hidden" style="margin:10px 0 14px">
-    <button class="save" style="border:0;border-radius:14px;padding:13px;width:100%" onclick="openShoppingForm()">＋ 添加物品</button>
+    <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openShoppingForm()">＋ 添加</button>
   </div>
 
   <div id="customActions" class="hidden" style="margin:10px 0 14px">
@@ -202,11 +202,19 @@ button{cursor:pointer}
 </div>
 
 <div id="shoppingModal" class="modal">
- <div class="sheet">
-  <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">🛒 添加物品</h2><button class="smallBtn" onclick="closeShoppingForm()">✕</button></div>
-  <label>物品</label><input id="shopTitle" placeholder="例如：洗衣液">
-  <label>数量 / 备注</label><input id="shopNotes" placeholder="例如：补充装 × 2">
-  <button class="save" style="width:100%;margin-top:14px" onclick="saveShopping()">加入清单</button>
+ <div class="sheet" style="max-width:520px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <h2 style="margin:0">🛒 添加物品</h2>
+    <button class="smallBtn" onclick="closeShoppingForm()">✕</button>
+  </div>
+
+  <label style="display:block;margin:12px 0 6px">物品名称</label>
+  <input id="shopTitle" style="width:100%" placeholder="例如：洗衣液">
+
+  <label style="display:block;margin:12px 0 6px">数量 / 备注</label>
+  <input id="shopNotes" style="width:100%" placeholder="例如：补充装 × 2">
+
+  <button class="save" style="width:100%;margin-top:18px;border-radius:13px;padding:12px" onclick="saveShopping()">加入清单</button>
  </div>
 </div>
 
@@ -403,7 +411,7 @@ function deleteCustomRecord(id){if(confirm('确定删除这条记录吗？')){re
 function addSpecialToCalendar(id){
  const r=records.find(x=>x.id===id); if(!r||!r.date)return;
  const d=r.date.replaceAll('-','');
- const next=new Date(Number(r.date.slice(0,4))+1,Number(r.date.slice(5,7))-1,Number(r.date.slice(8,10)));
+ const next=new Date(Number(r.date.slice(0,4)),Number(r.date.slice(5,7))-1,Number(r.date.slice(8,10))+1);
  const end=`${next.getFullYear()}${String(next.getMonth()+1).padStart(2,'0')}${String(next.getDate()).padStart(2,'0')}`;
  const kind=r.specialType==='birthday'?'生日':'纪念日';
  const title=`${kind} - ${r.title}`;
