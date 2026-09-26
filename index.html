@@ -639,10 +639,45 @@ function shareShoppingWhatsApp(){
  const pageId=activeCustomPageId();
  const items=records.filter(r=>r.category==='shopping'&&!r.done&&((pageId&&r.customPageId===pageId)||(!pageId&&!r.customPageId)));
  if(!items.length){alert('目前没有未完成的购物物品');return}
+
+ const old=document.getElementById('shoppingSharePicker');
+ if(old)old.remove();
+
+ const modal=document.createElement('div');
+ modal.id='shoppingSharePicker';
+ modal.className='modal show';
+ modal.innerHTML=`<div class="sheet" style="max-width:520px">
+   <h2 style="margin-top:0">选择要发送的物品</h2>
+   <div style="font-size:13px;color:#777;margin-bottom:12px">勾选后，只会发送你选择的物品。</div>
+   <div style="display:flex;gap:8px;margin-bottom:12px">
+     <button class="smallBtn" style="padding:7px 11px;border-radius:10px" onclick="document.querySelectorAll('#shoppingSharePicker input[type=checkbox]').forEach(x=>x.checked=true)">全选</button>
+     <button class="smallBtn" style="padding:7px 11px;border-radius:10px" onclick="document.querySelectorAll('#shoppingSharePicker input[type=checkbox]').forEach(x=>x.checked=false)">取消全选</button>
+   </div>
+   <div style="display:grid;gap:8px;max-height:48vh;overflow:auto">
+    ${items.map(r=>`<label style="display:flex;align-items:center;gap:10px;background:#fffaf0;border:1px solid #ead9b7;border-radius:12px;padding:11px 12px">
+      <input type="checkbox" value="${r.id}" style="width:20px;height:20px;flex:0 0 auto">
+      <span><b>${esc(r.title)}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</span>
+    </label>`).join('')}
+   </div>
+   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
+    <button class="smallBtn" style="padding:12px;border-radius:12px" onclick="document.getElementById('shoppingSharePicker')?.remove()">取消</button>
+    <button class="save" style="border:0;border-radius:12px;padding:12px" onclick="sendSelectedShoppingWhatsApp()">📤 WhatsApp 发送</button>
+   </div>
+ </div>`;
+ document.body.appendChild(modal);
+}
+
+function sendSelectedShoppingWhatsApp(){
+ const modal=document.getElementById('shoppingSharePicker');
+ if(!modal)return;
+ const ids=[...modal.querySelectorAll('input[type=checkbox]:checked')].map(x=>x.value);
+ if(!ids.length){alert('请先选择要发送的物品');return}
+ const selected=ids.map(id=>records.find(r=>r.id===id)).filter(Boolean);
  const page=currentCustomPage();
  const title=page?.name||'购物清单';
- const lines=items.map(r=>`☐ ${r.title}${r.notes?` — ${r.notes}`:''}`);
+ const lines=selected.map(r=>`☐ ${r.title}${r.notes?` — ${r.notes}`:''}`);
  const text=`🛒 ${title}\n\n${lines.join('\n')}`;
+ modal.remove();
  window.location.href='https://wa.me/?text='+encodeURIComponent(text);
 }
 
