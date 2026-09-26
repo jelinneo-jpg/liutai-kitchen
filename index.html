@@ -89,6 +89,14 @@ button{cursor:pointer}
     </div>
   </div>
 
+  <div id="workActions" class="hidden" style="margin:10px 0 14px">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openWorkMemoForm()">＋ Memo</button>
+      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openWorkTaskForm()">＋ 工作</button>
+    </div>
+    <button class="smallBtn" style="width:100%;margin-top:9px;padding:11px" onclick="openTodayWork()">📋 今天做工列表</button>
+  </div>
+
   <div class="sectionHead"><b id="listTitle">最近记录</b><span id="count" class="count"></span></div>
   <div id="list"></div>
 </div>
@@ -158,6 +166,38 @@ button{cursor:pointer}
     </div>
     <div id="moneyList" style="margin-top:15px"></div>
     <div id="moneyTotal" style="margin-top:14px;padding:14px;background:#f6ead7;border-radius:14px;font-size:18px;font-weight:800"></div>
+  </div>
+</div>
+
+
+<div id="workMemoModal" class="modal">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">📝 Memo</h2><button class="smallBtn" onclick="closeWorkMemoForm()">✕</button></div>
+    <label>日期</label><input id="wmDate" type="date">
+    <label>标题</label><input id="wmTitle" placeholder="例如：INFOR 操作笔记">
+    <label>内容</label><textarea id="wmNotes" rows="5" placeholder="记录工作资料..."></textarea>
+    <button class="save" style="width:100%;margin-top:14px" onclick="saveWorkMemo()">保存 Memo</button>
+  </div>
+</div>
+
+<div id="workTaskModal" class="modal">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">☑️ 添加工作</h2><button class="smallBtn" onclick="closeWorkTaskForm()">✕</button></div>
+    <label>日期</label><input id="wtDate" type="date">
+    <label>工作内容</label><input id="wtTitle" placeholder="例如：Follow up credit form">
+    <label>备注</label><textarea id="wtNotes" rows="3" placeholder="可不填"></textarea>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input id="wtToday" type="checkbox" checked style="width:auto"> 加入今天做工列表</label>
+    <button class="save" style="width:100%;margin-top:14px" onclick="saveWorkTask()">保存工作</button>
+  </div>
+</div>
+
+<div id="todayWorkModal" class="modal">
+  <div class="sheet" style="max-height:88vh;overflow:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:white;padding-bottom:8px;z-index:2">
+      <div><h2 style="margin:0">📋 今天做工列表</h2><div id="todayWorkDate" class="date"></div></div>
+      <button class="smallBtn" onclick="closeTodayWork()">✕</button>
+    </div>
+    <div id="todayWorkList"></div>
   </div>
 </div>
 
@@ -234,12 +274,14 @@ function saveAll(){localStorage.setItem(KEY,JSON.stringify(records))}
 function setFilter(f,btn){
  currentFilter=f;
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
- btn.classList.add('active');
- const med=f==='medical';
- $('medicalActions').classList.toggle('hidden',!med);
- $('listTitle').textContent=med?'医疗记录':'最近记录';
+ if(btn)btn.classList.add('active');
+ const med=f==='medical', work=f==='work';
+ if($('medicalActions'))$('medicalActions').classList.toggle('hidden',!med);
+ if($('workActions'))$('workActions').classList.toggle('hidden',!work);
+ if($('listTitle'))$('listTitle').textContent=med?'医疗记录':work?'工作记录':'最近记录';
  render();
 }
+
 function toggleMore(e,id){
  e.stopPropagation();
  document.querySelectorAll('.moreMenu').forEach(m=>{if(m.id!==id)m.classList.add('hidden')});
@@ -247,6 +289,72 @@ function toggleMore(e,id){
 }
 document.addEventListener('click',()=>document.querySelectorAll('.moreMenu').forEach(m=>m.classList.add('hidden')));
 
+
+function localToday(){
+ const d=new Date(), y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+ return `${y}-${m}-${day}`;
+}
+let editingWorkMemo=null, editingWorkTask=null;
+
+function openWorkMemoForm(id=null){
+ editingWorkMemo=id;
+ const r=id?records.find(x=>x.id===id):null;
+ $('wmDate').value=r?.date||localToday();
+ $('wmTitle').value=r?.title||'';
+ $('wmNotes').value=r?.notes||'';
+ $('workMemoModal').classList.add('show');
+}
+function closeWorkMemoForm(){$('workMemoModal').classList.remove('show')}
+function saveWorkMemo(){
+ const title=$('wmTitle').value.trim(); if(!title){alert('请填写标题');return}
+ const obj={id:editingWorkMemo||('wm_'+Date.now()),category:'workMemo',date:$('wmDate').value||localToday(),title,notes:$('wmNotes').value.trim(),created:Date.now()};
+ if(editingWorkMemo){const i=records.findIndex(x=>x.id===editingWorkMemo); if(i>=0)obj.created=records[i].created||Date.now(),records[i]=obj}else records.push(obj);
+ saveAll();closeWorkMemoForm();currentFilter='work';render();
+}
+function openWorkTaskForm(id=null){
+ editingWorkTask=id;
+ const r=id?records.find(x=>x.id===id):null;
+ $('wtDate').value=r?.date||localToday();
+ $('wtTitle').value=r?.title||'';
+ $('wtNotes').value=r?.notes||'';
+ $('wtToday').checked=r?!!r.inToday:true;
+ $('workTaskModal').classList.add('show');
+}
+function closeWorkTaskForm(){$('workTaskModal').classList.remove('show')}
+function saveWorkTask(){
+ const title=$('wtTitle').value.trim(); if(!title){alert('请填写工作内容');return}
+ const old=editingWorkTask?records.find(x=>x.id===editingWorkTask):null;
+ const obj={id:editingWorkTask||('wt_'+Date.now()),category:'workTask',date:$('wtDate').value||localToday(),title,notes:$('wtNotes').value.trim(),inToday:$('wtToday').checked,done:old?.done||false,created:old?.created||Date.now()};
+ if(editingWorkTask){const i=records.findIndex(x=>x.id===editingWorkTask);if(i>=0)records[i]=obj}else records.push(obj);
+ saveAll();closeWorkTaskForm();currentFilter='work';render();
+}
+function deleteWork(id){
+ if(confirm('确定删除这项工作吗？')){records=records.filter(x=>x.id!==id);saveAll();render();if($('todayWorkModal')?.classList.contains('show'))renderTodayWork()}
+}
+function completeWork(id){
+ const r=records.find(x=>x.id===id);if(!r)return;r.done=true;r.completedAt=Date.now();saveAll();render();renderTodayWork();
+}
+function undoWork(id){
+ const r=records.find(x=>x.id===id);if(!r)return;r.done=false;delete r.completedAt;saveAll();render();renderTodayWork();
+}
+function moveTomorrow(id){
+ const r=records.find(x=>x.id===id);if(!r)return;
+ const d=new Date();d.setDate(d.getDate()+1);
+ r.date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+ r.inToday=false;saveAll();render();renderTodayWork();
+}
+function openTodayWork(){$('todayWorkModal').classList.add('show');renderTodayWork()}
+function closeTodayWork(){$('todayWorkModal').classList.remove('show')}
+function renderTodayWork(){
+ const today=localToday();$('todayWorkDate').textContent=today;
+ const tasks=records.filter(r=>r.category==='workTask'&&r.inToday&&r.date===today);
+ const pending=tasks.filter(r=>!r.done),done=tasks.filter(r=>r.done);
+ const card=(r,isDone)=>`<div style="padding:11px 2px;border-bottom:1px solid #eee2d3">
+   <div style="display:flex;gap:8px;align-items:flex-start"><span>${isDone?'✅':'○'}</span><div style="flex:1"><b style="${isDone?'text-decoration:line-through;opacity:.65':''}">${esc(r.title)}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div></div>
+   <div class="actions" style="margin-left:25px">${isDone?`<button class="smallBtn" onclick="undoWork('${r.id}')">↩ 未完成</button>`:`<button class="smallBtn" onclick="completeWork('${r.id}')">✓ 完成</button><button class="smallBtn" onclick="moveTomorrow('${r.id}')">明天再做</button>`}<button class="smallBtn" onclick="openWorkTaskForm('${r.id}')">✏️</button></div>
+ </div>`;
+ $('todayWorkList').innerHTML=`<h3 style="margin:16px 0 5px">未完成 <span class="count">${pending.length}</span></h3>${pending.length?pending.map(r=>card(r,false)).join(''):'<div class="note">今天没有未完成工作 🎉</div>'}<h3 style="margin:20px 0 5px">已完成 ✅ <span class="count">${done.length}</span></h3>${done.length?done.map(r=>card(r,true)).join(''):'<div class="note">还没有完成项目</div>'}`;
+}
 function render(){
  const q=$('search').value.trim().toLowerCase();
  let arr;
@@ -255,7 +363,8 @@ function render(){
    arr=records.filter(r=>r.category==='medicalRecord'||r.category==='package');
  }else{
    arr=records.filter(r=>r.category!=='medicalRecord'&&r.category!=='package'&&r.category!=='doctor');
-   if(currentFilter!=='all') arr=arr.filter(r=>r.category===currentFilter);
+   if(currentFilter==='work') arr=arr.filter(r=>r.category==='workMemo'||r.category==='workTask'||r.category==='work');
+   else if(currentFilter!=='all') arr=arr.filter(r=>r.category===currentFilter);
  }
 
  arr=arr.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
@@ -317,6 +426,13 @@ function render(){
        </div>
        <div id="history_${r.id}" class="hidden" style="margin-top:10px"></div>
      </div>`;
+   }
+
+   if(r.category==='workMemo'){
+     return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">📝 Memo</span><span class="date" style="margin-left:7px">${esc(r.date||'')}</span><h3>${esc(r.title||'Memo')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openWorkMemoForm('${r.id}')">✏️ 编辑</button><button onclick="deleteWork('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
+   }
+   if(r.category==='workTask'){
+     return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">☑️ 工作</span><span class="date" style="margin-left:7px">${esc(r.date||'')}</span><h3 style="${r.done?'text-decoration:line-through;opacity:.65':''}">${r.done?'✅ ':''}${esc(r.title||'工作')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openWorkTaskForm('${r.id}')">✏️ 编辑</button><button onclick="deleteWork('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
    }
 
    return `<div class="card">
