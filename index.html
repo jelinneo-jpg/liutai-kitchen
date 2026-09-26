@@ -75,7 +75,6 @@ button{cursor:pointer}
     <button class="tab" onclick="setFilter('special',this)">✨ 特别日子</button>
     <button class="tab" onclick="setFilter('shopping',this)">🛒 购物清单</button>
     <span id="customTabs"></span>
-    <button class="tab" onclick="openAddPageForm()">＋ 添加页面</button>
 </div>
 
   <div id="builtinCopyActions" style="margin:8px 0 12px">
@@ -463,7 +462,7 @@ function saveSpecial(){
  const old=editingSpecial?records.find(x=>x.id===editingSpecial):null;
  const o={id:editingSpecial||('sp'+Date.now()),category:'special',customPageId:old?.customPageId||ownerPageId,specialType:type,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingSpecial)]=o}else records.push(o);
- saveAll();closeSpecialForm();currentFilter='special';render();
+ saveAll();closeSpecialForm();setFilter(currentFilter,null);
 }
 
 function deleteSpecial(id){if(confirm('确定删除这个特别日子吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
@@ -503,7 +502,7 @@ async function saveShopping(){
  }
  const o={id:editingShopping||('sh'+Date.now()),category:'shopping',customPageId:old?.customPageId||activeCustomPageId(),title,notes:$('shopNotes').value.trim(),photo,done:old?.done||false,created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingShopping)]=o}else records.push(o);
- saveAll();closeShoppingForm();currentFilter='shopping';render();
+ saveAll();closeShoppingForm();setFilter(currentFilter,null);
 }
 function openPhotoViewer(id){
  const r=records.find(x=>x.id===id);if(!r?.photo)return;
@@ -606,7 +605,7 @@ function saveCustomRecord(){
  const old=editingCustomRecord?records.find(x=>x.id===editingCustomRecord):null;
  const o={id:editingCustomRecord||('cr'+Date.now()),category:'custom',customPageId:p.id,date:$('crDate').value,title,recordCategory:(p.categories||[]).length?$('crCategory').value:'',notes:$('crNotes').value.trim(),created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingCustomRecord)]=o}else records.push(o);
- saveAll();closeCustomRecordForm();render();
+ saveAll();closeCustomRecordForm();setFilter(currentFilter,null);
 }
 function deleteCustomRecord(id){if(confirm('确定删除这条记录吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
 
@@ -881,7 +880,7 @@ function saveSession(){
   if(Number(r.stretchTotal??16)>0&&stretchUsed>Number(r.stretchTotal??16)){alert((r.stretchLabel||'拉腰 / 拉颈项')+' 的配套次数已经超过 '+Number(r.stretchTotal??16)+' 次。');return}
   if(Number(r.chiroTotal??8)>0&&chiroUsed>Number(r.chiroTotal??8)){alert((r.chiroLabel||'Chiro')+' 配套次数已经超过 '+Number(r.chiroTotal??8)+' 次。');return}
   if(idx==='')r.sessions.push(x);else r.sessions[Number(idx)]=x;
-  saveAll();closeSessionForm();render();setTimeout(()=>togglePackageHistory(r.id),0);
+  saveAll();closeSessionForm();setFilter(currentFilter,null);setTimeout(()=>togglePackageHistory(r.id),0);
 }
 function editSession(i){
   const r=records.find(x=>x.id===currentPackageId),x=r?.sessions?.[i];if(!x)return;
