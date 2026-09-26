@@ -70,15 +70,14 @@ button{cursor:pointer}
   <input id="search" class="search" placeholder="🔍 搜索标题、医生、诊所、内容……" oninput="render()">
   <div class="tabs">
     <button class="tab active" data-filter="all" onclick="setFilter('all',this)">全部</button>
-    
-    <button class="tab" data-filter="work" onclick="setFilter('work',this)">💼 工作</button>
-    <button class="tab" onclick="setFilter('todayWork',this)">📋 今日工作</button>
     <button class="tab" data-filter="life" onclick="setFilter('life',this)">🏠 生活</button>
     <button class="tab" data-filter="medical" onclick="setFilter('medical',this)">🏥 医疗</button>
-    <button class="tab" data-filter="birthday" onclick="setFilter('birthday',this)">🎂 生日</button>
-    <button class="tab" data-filter="anniversary" onclick="setFilter('anniversary',this)">❤️ 纪念日</button>
-    <button class="tab" data-filter="other" onclick="setFilter('other',this)">📝 其他</button>
-  </div>
+  
+    <button class="tab" onclick="setFilter('special',this)">✨ 特别日子</button>
+    <button class="tab" onclick="setFilter('shopping',this)">🛒 购物清单</button>
+    <span id="customTabs"></span>
+    <button class="tab" onclick="openAddPageForm()">＋ 添加页面</button>
+</div>
 
   <div id="medicalActions" class="hidden" style="margin:10px 0 14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -90,14 +89,21 @@ button{cursor:pointer}
     </div>
   </div>
 
-  <div id="workActions" class="hidden" style="margin:10px 0 14px">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openWorkMemoForm()">＋ Memo</button>
-      <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openWorkTaskForm()">＋ 工作</button>
-    </div>
+  
+  <div id="specialActions" class="hidden" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0 14px">
+    <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openSpecialForm('birthday')">＋ 🎂 生日</button>
+    <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openSpecialForm('anniversary')">＋ 💕 纪念日</button>
   </div>
 
-  <div class="sectionHead"><b id="listTitle">最近记录</b><span id="count" class="count"></span></div>
+  <div id="shoppingActions" class="hidden" style="margin:10px 0 14px">
+    <button class="save" style="border:0;border-radius:14px;padding:13px;width:100%" onclick="openShoppingForm()">＋ 添加物品</button>
+  </div>
+
+  <div id="customActions" class="hidden" style="margin:10px 0 14px">
+    <button class="save" style="border:0;border-radius:14px;padding:13px;width:100%" onclick="openCustomRecordForm()">＋ 新增记录</button>
+  </div>
+
+<div class="sectionHead"><b id="listTitle">最近记录</b><span id="count" class="count"></span></div>
   <div id="list"></div>
 </div>
 
@@ -170,49 +176,44 @@ button{cursor:pointer}
 </div>
 
 
-<div id="workMemoModal" class="modal">
-  <div class="sheet">
-    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">📝 Memo</h2><button class="smallBtn" onclick="closeWorkMemoForm()">✕</button></div>
-    <label>日期</label><input id="wmDate" type="date">
-    <label>标题</label><input id="wmTitle" placeholder="例如：INFOR 操作笔记">
-    <label>内容</label><textarea id="wmNotes" rows="5" placeholder="记录工作资料..."></textarea>
-    <button class="save" style="width:100%;margin-top:14px" onclick="saveWorkMemo()">保存 Memo</button>
-  </div>
+<div id="specialModal" class="modal">
+ <div class="sheet">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 id="specialFormTitle" style="margin:0">✨ 特别日子</h2><button class="smallBtn" onclick="closeSpecialForm()">✕</button></div>
+  <label>日期</label><input id="spDate" type="date">
+  <label>名称</label><input id="spTitle" placeholder="例如：妈妈生日">
+  <label>备注</label><textarea id="spNotes" rows="3" placeholder="可不填"></textarea>
+  <button class="save" style="width:100%;margin-top:14px" onclick="saveSpecial()">保存</button>
+ </div>
 </div>
 
-<div id="workTaskModal" class="modal">
-  <div class="sheet">
-    <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">☑️ 添加工作</h2><button class="smallBtn" onclick="closeWorkTaskForm()">✕</button></div>
-    <label>工作内容</label><input id="wtTitle" placeholder="例如：开发票">
-    <label>备注</label><textarea id="wtNotes" rows="3" placeholder="可不填"></textarea>
-
-    <label>执行方式</label>
-    <select id="wtType" onchange="toggleWorkScheduleFields()">
-      <option value="once">单次工作</option>
-      <option value="weekly">每周固定</option>
-    </select>
-
-    <div id="wtOnceFields">
-      <label>做工日期</label><input id="wtDate" type="date">
-    </div>
-
-    <div id="wtWeeklyFields" class="hidden">
-      <label>固定星期</label>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">
-        <label class="smallBtn"><input class="wtDay" type="checkbox" value="1" style="width:auto"> 一</label>
-        <label class="smallBtn"><input class="wtDay" type="checkbox" value="2" style="width:auto"> 二</label>
-        <label class="smallBtn"><input class="wtDay" type="checkbox" value="3" style="width:auto"> 三</label>
-        <label class="smallBtn"><input class="wtDay" type="checkbox" value="4" style="width:auto"> 四</label>
-        <label class="smallBtn"><input class="wtDay" type="checkbox" value="5" style="width:auto"> 五</label>
-        <label class="smallBtn"><input class="wtDay" type="checkbox" value="6" style="width:auto"> 六</label>
-        <label class="smallBtn"><input class="wtDay" type="checkbox" value="0" style="width:auto"> 日</label>
-      </div>
-      <button type="button" class="smallBtn" style="margin-top:8px" onclick="selectWeekdays()">一键选工作日（一至五）</button>
-    </div>
-
-    <button class="save" style="width:100%;margin-top:14px" onclick="saveWorkTask()">保存工作</button>
-  </div>
+<div id="shoppingModal" class="modal">
+ <div class="sheet">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">🛒 添加物品</h2><button class="smallBtn" onclick="closeShoppingForm()">✕</button></div>
+  <label>物品</label><input id="shopTitle" placeholder="例如：洗衣液">
+  <label>数量 / 备注</label><input id="shopNotes" placeholder="例如：补充装 × 2">
+  <button class="save" style="width:100%;margin-top:14px" onclick="saveShopping()">加入清单</button>
+ </div>
 </div>
+
+<div id="addPageModal" class="modal">
+ <div class="sheet">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">＋ 添加页面</h2><button class="smallBtn" onclick="closeAddPageForm()">✕</button></div>
+  <label>图标</label><input id="pageIcon" placeholder="例如：✈️" maxlength="4">
+  <label>页面名称</label><input id="pageName" placeholder="例如：旅行资料">
+  <button class="save" style="width:100%;margin-top:14px" onclick="saveCustomPage()">添加页面</button>
+ </div>
+</div>
+
+<div id="customRecordModal" class="modal">
+ <div class="sheet">
+  <div style="display:flex;justify-content:space-between;align-items:center"><h2 id="customRecordHeading" style="margin:0">新增记录</h2><button class="smallBtn" onclick="closeCustomRecordForm()">✕</button></div>
+  <label>日期</label><input id="crDate" type="date">
+  <label>标题</label><input id="crTitle" placeholder="标题">
+  <label>内容</label><textarea id="crNotes" rows="5" placeholder="记录内容..."></textarea>
+  <button class="save" style="width:100%;margin-top:14px" onclick="saveCustomRecord()">保存</button>
+ </div>
+</div>
+
 <div id="packageModal" class="modal">
   <div class="sheet">
     <h2 id="packageFormTitle">📦 添加配套</h2>
@@ -287,10 +288,13 @@ function setFilter(f,btn){
  currentFilter=f;
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  if(btn)btn.classList.add('active');
- const med=f==='medical', work=f==='work', today=f==='todayWork';
+ const med=f==='medical', special=f==='special', shopping=f==='shopping', custom=f.startsWith('custom:');
  if($('medicalActions'))$('medicalActions').classList.toggle('hidden',!med);
- if($('workActions'))$('workActions').classList.toggle('hidden',!work);
- if($('listTitle'))$('listTitle').textContent=med?'医疗记录':work?'工作记录':today?'📋 今日工作列表':'最近记录';
+ if($('specialActions'))$('specialActions').classList.toggle('hidden',!special);
+ if($('shoppingActions'))$('shoppingActions').classList.toggle('hidden',!shopping);
+ if($('customActions'))$('customActions').classList.toggle('hidden',!custom);
+ const cp=custom?customPages.find(x=>'custom:'+x.id===f):null;
+ $('listTitle').textContent=med?'医疗记录':special?'✨ 特别日子':shopping?'🛒 购物清单':cp?(cp.icon+' '+cp.name):f==='life'?'🏠 生活':'记录';
  render();
 }
 
@@ -302,231 +306,116 @@ function toggleMore(e,id){
 document.addEventListener('click',()=>document.querySelectorAll('.moreMenu').forEach(m=>m.classList.add('hidden')));
 
 
-function localToday(){
- const d=new Date(), y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
- return `${y}-${m}-${day}`;
-}
-let editingWorkMemo=null, editingWorkTask=null;
+let customPages=JSON.parse(localStorage.getItem('myRecordCustomPages')||'[]');
+let specialType='birthday', editingSpecial=null, editingShopping=null, editingCustomRecord=null;
 
-function openWorkMemoForm(id=null){
- editingWorkMemo=id;
+function saveCustomPages(){localStorage.setItem('myRecordCustomPages',JSON.stringify(customPages))}
+function renderCustomTabs(){
+ const box=$('customTabs'); if(!box)return;
+ box.innerHTML=customPages.map(p=>`<button class="tab" onclick="setFilter('custom:${p.id}',this)">${esc(p.icon||'📌')} ${esc(p.name)}</button>`).join('');
+}
+function openAddPageForm(){$('pageIcon').value='';$('pageName').value='';$('addPageModal').classList.add('show')}
+function closeAddPageForm(){$('addPageModal').classList.remove('show')}
+function saveCustomPage(){
+ const name=$('pageName').value.trim();if(!name){alert('请填写页面名称');return}
+ customPages.push({id:'p'+Date.now(),icon:$('pageIcon').value.trim()||'📌',name});
+ saveCustomPages();renderCustomTabs();closeAddPageForm();
+}
+function deleteCustomPage(id){
+ const p=customPages.find(x=>x.id===id);if(!p)return;
+ if(confirm(`确定删除「${p.name}」页面吗？里面的记录也会一起删除。`)){
+  customPages=customPages.filter(x=>x.id!==id);
+  records=records.filter(r=>r.customPageId!==id);
+  saveCustomPages();saveAll();currentFilter='life';renderCustomTabs();render();
+ }
+}
+
+function openSpecialForm(type,id=null){
+ specialType=type;editingSpecial=id;
  const r=id?records.find(x=>x.id===id):null;
- $('wmDate').value=r?.date||localToday();
- $('wmTitle').value=r?.title||'';
- $('wmNotes').value=r?.notes||'';
- $('workMemoModal').classList.add('show');
+ $('specialFormTitle').textContent=type==='birthday'?'🎂 生日':'💕 纪念日';
+ $('spDate').value=r?.date||'';
+ $('spTitle').value=r?.title||'';
+ $('spNotes').value=r?.notes||'';
+ $('specialModal').classList.add('show');
 }
-function closeWorkMemoForm(){$('workMemoModal').classList.remove('show')}
-function saveWorkMemo(){
- const title=$('wmTitle').value.trim(); if(!title){alert('请填写标题');return}
- const obj={id:editingWorkMemo||('wm_'+Date.now()),category:'workMemo',date:$('wmDate').value||localToday(),title,notes:$('wmNotes').value.trim(),created:Date.now()};
- if(editingWorkMemo){const i=records.findIndex(x=>x.id===editingWorkMemo); if(i>=0)obj.created=records[i].created||Date.now(),records[i]=obj}else records.push(obj);
- saveAll();closeWorkMemoForm();currentFilter='work';render();
+function closeSpecialForm(){$('specialModal').classList.remove('show')}
+function saveSpecial(){
+ const title=$('spTitle').value.trim(),date=$('spDate').value;if(!title||!date){alert('请填写日期和名称');return}
+ const old=editingSpecial?records.find(x=>x.id===editingSpecial):null;
+ const o={id:editingSpecial||('sp'+Date.now()),category:'special',specialType,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
+ if(old){records[records.findIndex(x=>x.id===editingSpecial)]=o}else records.push(o);
+ saveAll();closeSpecialForm();currentFilter='special';render();
 }
-function toggleWorkScheduleFields(){
- const weekly=$('wtType').value==='weekly';
- $('wtOnceFields').classList.toggle('hidden',weekly);
- $('wtWeeklyFields').classList.toggle('hidden',!weekly);
-}
-function selectWeekdays(){
- document.querySelectorAll('.wtDay').forEach(x=>x.checked=['1','2','3','4','5'].includes(x.value));
-}
-function openWorkTaskForm(id=null){
- editingWorkTask=id;
- const r=id?records.find(x=>x.id===id):null;
- $('wtTitle').value=r?.title||'';
- $('wtNotes').value=r?.notes||'';
- $('wtType').value=r?.repeatType==='weekly'?'weekly':'once';
- $('wtDate').value=r?.date||localToday();
- document.querySelectorAll('.wtDay').forEach(x=>x.checked=(r?.weekdays||[]).map(String).includes(x.value));
- toggleWorkScheduleFields();
- $('workTaskModal').classList.add('show');
-}
-function closeWorkTaskForm(){$('workTaskModal').classList.remove('show')}
-function saveWorkTask(){
- const title=$('wtTitle').value.trim(); if(!title){alert('请填写工作内容');return}
- const type=$('wtType').value;
- const weekdays=[...document.querySelectorAll('.wtDay:checked')].map(x=>Number(x.value));
- if(type==='weekly'&&!weekdays.length){alert('请选择至少一个星期');return}
- const old=editingWorkTask?records.find(x=>x.id===editingWorkTask):null;
- const obj={
-   id:editingWorkTask||('wt_'+Date.now()),category:'workTask',
-   title,notes:$('wtNotes').value.trim(),
-   repeatType:type,
-   date:type==='once'?($('wtDate').value||localToday()):'',
-   weekdays:type==='weekly'?weekdays:[],
-   done: type==='once'?(old?.done||false):false,
-   completedDates: old?.completedDates||[],
-   created:old?.created||Date.now()
- };
- if(editingWorkTask){const i=records.findIndex(x=>x.id===editingWorkTask);if(i>=0)records[i]=obj}else records.push(obj);
- saveAll();closeWorkTaskForm();currentFilter='work';render();
-}
+function deleteSpecial(id){if(confirm('确定删除这个特别日子吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
 
-function deleteWork(id){
- if(confirm('确定删除这项工作吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}
+function openShoppingForm(id=null){
+ editingShopping=id;const r=id?records.find(x=>x.id===id):null;
+ $('shopTitle').value=r?.title||'';$('shopNotes').value=r?.notes||'';$('shoppingModal').classList.add('show');
 }
-function completeWork(id){
- const r=records.find(x=>x.id===id);if(!r)return;
- if(r.repeatType==='weekly'){
-   r.completedDates=r.completedDates||[];
-   const t=localToday(); if(!r.completedDates.includes(t))r.completedDates.push(t);
- }else r.done=true;
- saveAll();render();
+function closeShoppingForm(){$('shoppingModal').classList.remove('show')}
+function saveShopping(){
+ const title=$('shopTitle').value.trim();if(!title){alert('请填写物品');return}
+ const old=editingShopping?records.find(x=>x.id===editingShopping):null;
+ const o={id:editingShopping||('sh'+Date.now()),category:'shopping',title,notes:$('shopNotes').value.trim(),done:old?.done||false,created:old?.created||Date.now()};
+ if(old){records[records.findIndex(x=>x.id===editingShopping)]=o}else records.push(o);
+ saveAll();closeShoppingForm();currentFilter='shopping';render();
 }
-function undoWork(id){
- const r=records.find(x=>x.id===id);if(!r)return;
- if(r.repeatType==='weekly'){
-   r.completedDates=(r.completedDates||[]).filter(x=>x!==localToday());
- }else r.done=false;
- saveAll();render();
-}
-function moveTomorrow(id){
- const r=records.find(x=>x.id===id);if(!r)return;
- if(r.repeatType==='weekly'){alert('固定工作会按照你选择的星期自动出现。');return}
- const d=new Date();d.setDate(d.getDate()+1);
- r.date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
- saveAll();render();
-}
+function toggleShopping(id){const r=records.find(x=>x.id===id);if(r){r.done=!r.done;saveAll();render()}}
+function deleteShopping(id){if(confirm('确定删除这个物品吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
 
-function renderTodayWork(){
- const today=localToday();$('todayWorkDate').textContent=today;
- const tasks=records.filter(r=>r.category==='workTask'&&r.inToday&&r.date===today);
- const pending=tasks.filter(r=>!r.done),done=tasks.filter(r=>r.done);
- const card=(r,isDone)=>`<div style="padding:11px 2px;border-bottom:1px solid #eee2d3">
-   <div style="display:flex;gap:8px;align-items:flex-start"><span>${isDone?'✅':'○'}</span><div style="flex:1"><b style="${isDone?'text-decoration:line-through;opacity:.65':''}">${esc(r.title)}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div></div>
-   <div class="actions" style="margin-left:25px">${isDone?`<button class="smallBtn" onclick="undoWork('${r.id}')">↩ 未完成</button>`:`<button class="smallBtn" onclick="completeWork('${r.id}')">✓ 完成</button><button class="smallBtn" onclick="moveTomorrow('${r.id}')">明天再做</button>`}<button class="smallBtn" onclick="openWorkTaskForm('${r.id}')">✏️</button></div>
- </div>`;
- $('todayWorkList').innerHTML=`<h3 style="margin:16px 0 5px">未完成 <span class="count">${pending.length}</span></h3>${pending.length?pending.map(r=>card(r,false)).join(''):'<div class="note">今天没有未完成工作 🎉</div>'}<h3 style="margin:20px 0 5px">已完成 ✅ <span class="count">${done.length}</span></h3>${done.length?done.map(r=>card(r,true)).join(''):'<div class="note">还没有完成项目</div>'}`;
+function currentCustomPage(){if(!currentFilter.startsWith('custom:'))return null;return customPages.find(x=>x.id===currentFilter.split(':')[1])}
+function openCustomRecordForm(id=null){
+ const p=currentCustomPage();if(!p)return;editingCustomRecord=id;const r=id?records.find(x=>x.id===id):null;
+ $('customRecordHeading').textContent=(p.icon||'📌')+' '+p.name+' · 新增记录';
+ $('crDate').value=r?.date||new Date().toISOString().slice(0,10);$('crTitle').value=r?.title||'';$('crNotes').value=r?.notes||'';
+ $('customRecordModal').classList.add('show');
 }
-
-function renderTodayWorkMain(){
- const today=localToday();
- const dow=new Date(today+'T12:00:00').getDay();
- const tasks=records.filter(r=>{
-   if(r.category!=='workTask')return false;
-   if(r.repeatType==='weekly')return (r.weekdays||[]).includes(dow);
-   return r.date===today;
- }).map(r=>{
-   const isDone=r.repeatType==='weekly'?(r.completedDates||[]).includes(today):!!r.done;
-   return {r,isDone};
- });
- const pending=tasks.filter(x=>!x.isDone), done=tasks.filter(x=>x.isDone);
- $('count').textContent=tasks.length+' 条';
- const dayNames=['日','一','二','三','四','五','六'];
- const item=(x)=>{const r=x.r,isDone=x.isDone;return `<div class="card medCompact">
-   <div style="display:flex;gap:9px;align-items:flex-start">
-     <span style="font-size:18px">${isDone?'✅':'○'}</span>
-     <div style="flex:1;min-width:0">
-       <b style="${isDone?'text-decoration:line-through;opacity:.65':''}">${esc(r.title)}</b>
-       ${r.repeatType==='weekly'?`<div class="date" style="margin-top:3px">固定：${(r.weekdays||[]).map(d=>dayNames[d]).join('・')}</div>`:''}
-       ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
-       <div class="actions" style="margin-top:8px">
-         ${isDone
-           ?`<button class="smallBtn" onclick="undoWork('${r.id}')">↩ 未完成</button>`
-           :`<button class="smallBtn" onclick="completeWork('${r.id}')">✓ 完成</button>${r.repeatType==='weekly'?'':`<button class="smallBtn" onclick="moveTomorrow('${r.id}')">明天再做</button>`}`}
-         <button class="smallBtn" onclick="openWorkTaskForm('${r.id}')">✏️</button>
-       </div>
-     </div>
-   </div>
- </div>`};
- $('list').innerHTML=
-   `<div style="font-size:13px;color:#8b7c6c;margin:0 2px 10px">${today}　星期${dayNames[dow]}</div>
-    <h3 style="margin:8px 2px">未完成 <span class="count">${pending.length}</span></h3>
-    ${pending.length?pending.map(item).join(''):'<div class="note" style="padding:10px 2px">今天没有未完成工作 🎉</div>'}
-    <h3 style="margin:20px 2px 8px">已完成 ✅ <span class="count">${done.length}</span></h3>
-    ${done.length?done.map(item).join(''):'<div class="note" style="padding:10px 2px">还没有完成项目</div>'}`;
+function closeCustomRecordForm(){$('customRecordModal').classList.remove('show')}
+function saveCustomRecord(){
+ const p=currentCustomPage(),title=$('crTitle').value.trim();if(!p||!title){alert('请填写标题');return}
+ const old=editingCustomRecord?records.find(x=>x.id===editingCustomRecord):null;
+ const o={id:editingCustomRecord||('cr'+Date.now()),category:'custom',customPageId:p.id,date:$('crDate').value,title,notes:$('crNotes').value.trim(),created:old?.created||Date.now()};
+ if(old){records[records.findIndex(x=>x.id===editingCustomRecord)]=o}else records.push(o);
+ saveAll();closeCustomRecordForm();render();
 }
-
+function deleteCustomRecord(id){if(confirm('确定删除这条记录吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
 function render(){
- if(currentFilter==='todayWork'){ renderTodayWorkMain(); return; }
-
  const q=$('search').value.trim().toLowerCase();
- let arr;
+ let arr=[];
+ if(currentFilter==='medical')arr=records.filter(r=>r.category==='medicalRecord'||r.category==='package');
+ else if(currentFilter==='special')arr=records.filter(r=>r.category==='special');
+ else if(currentFilter==='shopping')arr=records.filter(r=>r.category==='shopping');
+ else if(currentFilter.startsWith('custom:'))arr=records.filter(r=>r.category==='custom'&&r.customPageId===currentFilter.split(':')[1]);
+ else if(currentFilter==='life')arr=records.filter(r=>r.category==='life');
+ arr=arr.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
 
- if(currentFilter==='medical'){
-   arr=records.filter(r=>r.category==='medicalRecord'||r.category==='package');
- }else{
-   arr=records.filter(r=>r.category!=='medicalRecord'&&r.category!=='package'&&r.category!=='doctor');
-   if(currentFilter==='work') arr=arr.filter(r=>r.category==='workMemo'||r.category==='workTask'||r.category==='work');
-   else if(currentFilter!=='all') arr=arr.filter(r=>r.category===currentFilter);
+ if(currentFilter==='shopping'){
+  const pending=arr.filter(r=>!r.done),done=arr.filter(r=>r.done);
+  $('count').textContent=arr.length+' 项';
+  const item=r=>`<div class="card medCompact" style="${r.done?'opacity:.7':''}">
+   <div style="display:flex;gap:10px;align-items:flex-start">
+    <button onclick="toggleShopping('${r.id}')" style="border:0;background:transparent;font-size:22px;padding:0">${r.done?'☑️':'☐'}</button>
+    <div style="flex:1"><b style="${r.done?'text-decoration:line-through':''}">${esc(r.title)}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>
+    <div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openShoppingForm('${r.id}')">✏️ 编辑</button><button onclick="deleteShopping('${r.id}')">🗑️ 删除</button></div></div>
+   </div></div>`;
+  $('list').innerHTML=`<h3>未完成 <span class="count">${pending.length}</span></h3>${pending.map(item).join('')||'<div class="note">购物清单完成啦 🎉</div>'}<h3 style="margin-top:20px">已完成 ✅ <span class="count">${done.length}</span></h3>${done.map(item).join('')||'<div class="note">还没有完成物品</div>'}`;
+  return;
  }
 
- arr=arr.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
  arr.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
  $('count').textContent=arr.length+' 条';
-
- if(!arr.length){
-   $('list').innerHTML=currentFilter==='medical'
-     ?'<div class="empty">还没有医疗记录<br><small>按上面的「＋看医生」或「＋配套」开始记录</small></div>'
-     :'<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';
-   return;
- }
+ if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿</div>';return}
 
  $('list').innerHTML=arr.map(r=>{
-   if(r.category==='medicalRecord'){
-     return `<div class="card medCompact">
-       <div class="cardTop">
-         <div style="min-width:0">
-           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge doctor">🏥 医疗 · 看医生</span><span class="date">${esc(r.date||'')}</span></div>
-           <h3>${esc(r.title||'看医生')}</h3>
-         </div>
-         <div class="moreWrap">
-           <button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button>
-           <div id="more_${r.id}" class="moreMenu hidden">
-             <button onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button>
-             <button onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button>
-           </div>
-         </div>
-       </div>
-       ${r.notes?`<div class="meta"><b>📝 备注</b><br>${esc(r.notes)}</div>`:''}
-     </div>`;
-   }
-
-   if(r.category==='package'){
-     const sessions=r.sessions||[];
-     const st=Number(r.stretchTotal)||16, ct=Number(r.chiroTotal)||8;
-     const su=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0);
-     const cu=sessions.filter(x=>x.chiro).length;
-     const complete=su>=st&&cu>=ct;
-     return `<div class="card medCompact">
-       <div class="cardTop">
-         <div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3><div class="date">${complete?'✅ 已完成':'使用中'}</div></div>
-         <div class="moreWrap">
-           <button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button>
-           <div id="more_${r.id}" class="moreMenu hidden">
-             <button onclick="openPackageForm('${r.id}')">✏️ 编辑</button>
-             <button onclick="deletePackage('${r.id}')">🗑️ 删除</button>
-           </div>
-         </div>
-       </div>
-       <div class="meta" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-         <b>拉腰 / 拉颈项：${su}/${st}</b>
-         <span style="color:#c6b39b">｜</span>
-         <b>Chiro：${cu}/${ct}</b>
-       </div>
-       <div class="actions" style="justify-content:flex-start;flex-wrap:wrap">
-         <button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 记录治疗'}</button>
-         <button class="smallBtn" onclick="togglePackageHistory('${r.id}')">治疗记录 ▼</button>
-       </div>
-       <div id="history_${r.id}" class="hidden" style="margin-top:10px"></div>
-     </div>`;
-   }
-
-   if(r.category==='workMemo'){
-     return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">📝 Memo</span><span class="date" style="margin-left:7px">${esc(r.date||'')}</span><h3>${esc(r.title||'Memo')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openWorkMemoForm('${r.id}')">✏️ 编辑</button><button onclick="deleteWork('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
-   }
-   if(r.category==='workTask'){
-     const dn=['日','一','二','三','四','五','六'];
-     const schedule=r.repeatType==='weekly'?'固定：'+(r.weekdays||[]).map(d=>dn[d]).join('・'):(r.date||'');
-     return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">☑️ 工作</span><span class="date" style="margin-left:7px">${esc(schedule)}</span><h3 style="${r.done?'text-decoration:line-through;opacity:.65':''}">${r.done?'✅ ':''}${esc(r.title||'工作')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openWorkTaskForm('${r.id}')">✏️ 编辑</button><button onclick="deleteWork('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
-   }
-
-   return `<div class="card">
-     <div class="cardTop"><div><span class="badge">${label(r.category)}</span><h3>${esc(r.title||'未命名记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
-     ${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}
-     <div class="actions"><button class="smallBtn" onclick="editRecord('${r.id}')">✏️ 编辑</button><button class="smallBtn danger" onclick="deleteRecord('${r.id}')">🗑️ 删除</button></div>
-   </div>`;
+  if(r.category==='medicalRecord')return `<div class="card medCompact"><div class="cardTop"><div style="min-width:0"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge doctor">🏥 医疗 · 看医生</span><span class="date">${esc(r.date||'')}</span></div><h3>${esc(r.title||'看医生')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button><button onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="meta"><b>📝 备注</b><br>${esc(r.notes)}</div>`:''}</div>`;
+  if(r.category==='package'){
+   const ss=r.sessions||[],st=Number(r.stretchTotal)||16,ct=Number(r.chiroTotal)||8,su=ss.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0),cu=ss.filter(x=>x.chiro).length,complete=su>=st&&cu>=ct;
+   return `<div class="card medCompact"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3><div class="date">${complete?'✅ 已完成':'使用中'}</div></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openPackageForm('${r.id}')">✏️ 编辑</button><button onclick="deletePackage('${r.id}')">🗑️ 删除</button></div></div></div><div class="meta" style="display:flex;gap:10px;flex-wrap:wrap"><b>拉腰 / 拉颈项：${su}/${st}</b><span>｜</span><b>Chiro：${cu}/${ct}</b></div><div class="actions"><button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 记录治疗'}</button><button class="smallBtn" onclick="togglePackageHistory('${r.id}')">治疗记录 ▼</button></div><div id="history_${r.id}" class="hidden" style="margin-top:10px"></div></div>`;
+  }
+  if(r.category==='special')return `<div class="card medCompact"><div class="cardTop"><div><span class="badge">${r.specialType==='birthday'?'🎂 生日':'💕 纪念日'}</span><span class="date" style="margin-left:7px">${esc(r.date)}</span><h3>${esc(r.title)}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openSpecialForm('${r.specialType}','${r.id}')">✏️ 编辑</button><button onclick="deleteSpecial('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
+  if(r.category==='custom')return `<div class="card medCompact"><div class="cardTop"><div><span class="date">${esc(r.date||'')}</span><h3>${esc(r.title)}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openCustomRecordForm('${r.id}')">✏️ 编辑</button><button onclick="deleteCustomRecord('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
+  return `<div class="card medCompact"><div class="cardTop"><div><span class="date">${esc(r.date||'')}</span><h3>${esc(r.title||'记录')}</h3></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
  }).join('');
 }
 function clearForm(){
@@ -723,6 +612,8 @@ function deleteSession(i){
   const r=records.find(x=>x.id===currentPackageId);if(!r)return;r.sessions.splice(i,1);saveAll();openPackageDetail(r.id);render();
 }
 render();
+
+renderCustomTabs();
 </script>
 </body>
 </html>
