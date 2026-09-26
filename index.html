@@ -1,101 +1,214 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>我的一日三餐</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#f6dca5">
+<title>我的记录本</title>
 <style>
-:root{--bg:#FBF1E7;--card-bg:#FFFFFF;--ink:#2A2620;--ink-soft:#6B6660;--ink-faint:#9C968C;--line:#F0E4D6;--accent:#E08A5B;--accent-ink:#FFFFFF;--accent-soft:#FBE3D2;--purple:#8B7FD1;--green-bg:#E3F5EA;--green-ink:#2F9E5B;--danger-bg:#FBE4E2;--danger-ink:#C4544A;--input-bg:#FFFFFF;--input-line:#E9DACB;--sheet-bg:#FBF1E7;--shadow:0 8px 22px rgba(60,45,25,.08);color-scheme:light}
-:root:not([data-theme="light"]){@media(prefers-color-scheme:dark){:root{--bg:#221C15;--card-bg:#2B2419;--ink:#F1E7D8;--ink-soft:#C7B79D;--ink-faint:#8B7C64;--line:#40331F;--accent:#E4966A;--accent-ink:#221C15;--accent-soft:#3C2C1C;--purple:#A79BE0;--green-bg:#233A28;--green-ink:#6BC98D;--danger-bg:#3C2621;--danger-ink:#E2867B;--input-bg:#2B2419;--input-line:#40331F;--sheet-bg:#221C15;--shadow:0 8px 22px rgba(0,0,0,.35)}}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}button{font-family:inherit;cursor:pointer}#app{max-width:680px;margin:0 auto;padding:20px 16px 48px}header.top{display:flex;align-items:center;gap:10px;margin-bottom:16px}header.top .emoji{font-size:26px}header.top h1{font-size:23px;margin:0;font-weight:800}header.top .sub{font-size:12.5px;color:var(--ink-faint);margin-top:2px}.tabbar{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:20px}.tabbar::-webkit-scrollbar{display:none}.tabbar button{flex:0 0 auto;display:flex;align-items:center;gap:6px;padding:11px 16px;border-radius:14px;border:1px solid var(--line);background:var(--card-bg);color:var(--ink-soft);font-size:13.5px;font-weight:600;box-shadow:var(--shadow)}.tabbar button.active{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.section{display:none}.section.active{display:block}.sectionhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.sectionhead h2{font-size:17px;margin:0}.pillbtn{border:0;background:var(--accent);color:var(--accent-ink);padding:10px 15px;border-radius:12px;font-size:13px;font-weight:700}.subtabs{display:flex;gap:8px;overflow-x:auto;margin-bottom:16px}.subtab{flex:0 0 auto;padding:8px 15px;border-radius:999px;border:1px solid var(--line);background:var(--card-bg);color:var(--ink-soft);font-size:13px}.subtab.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:700}.card{background:var(--card-bg);border-radius:18px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow)}.card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}.card-title{display:flex;align-items:center;gap:8px;font-size:16px;font-weight:700;min-width:0}.card-title .txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.meta{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--ink-soft);margin-top:6px}.dot{width:20px;height:20px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px}.dot.cat{background:var(--accent-soft);color:var(--accent)}.foothint{font-size:12px;color:var(--ink-faint);margin-top:10px}.pickpill{border:0;border-radius:10px;padding:8px 12px;background:var(--accent-soft);color:var(--accent);font-size:12.5px;font-weight:700}.pickpill.picked{background:var(--accent);color:var(--accent-ink)}.statusbar{background:var(--green-bg);color:var(--green-ink);text-align:center;border-radius:12px;padding:9px;font-size:12.5px;font-weight:700;margin:-4px 0 12px}.empty{text-align:center;color:var(--ink-faint);padding:40px 20px;line-height:1.8;font-size:13.5px}.record-item{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 0;border-bottom:1px solid var(--line)}.record-item:last-child{border-bottom:none}.rtxt{font-size:14.5px}.cal{font-size:12.5px;color:var(--accent);margin-top:3px;font-weight:700}.cancel-pick,.delete-record{border:0;border-radius:9px;padding:6px 11px;background:var(--danger-bg);color:var(--danger-ink);font-size:12px}.groupname{font-size:13px;color:var(--ink-soft);margin:0 0 6px}.group{margin-bottom:14px}.datehead{font-size:13.5px;font-weight:700;color:var(--ink-soft);margin:0 0 8px}.cal-summary{background:linear-gradient(135deg,var(--accent-soft),var(--card-bg));border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}.cal-summary .label{font-size:13px;color:var(--ink-soft)}.cal-summary .value{font-size:22px;font-weight:800;color:var(--accent)}.modal{position:fixed;inset:0;background:rgba(30,20,10,.42);display:none;align-items:flex-end;z-index:30}.modal.show{display:flex}.modal-sheet{width:100%;max-width:680px;margin:auto;background:var(--sheet-bg);border-radius:22px 22px 0 0;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom));max-height:92vh;overflow-y:auto}.meal-sheet,.confirm-sheet{max-width:400px;border-radius:18px}.modal-sheet h2{margin-top:0;font-size:18px}label{display:block;font-size:12.5px;color:var(--ink-soft);margin-top:8px}input,textarea,select{width:100%;padding:11px 12px;border:1px solid var(--input-line);border-radius:12px;margin:6px 0 12px;background:var(--input-bg);color:var(--ink);font-size:14.5px;font-family:inherit}.field-error{color:var(--danger-ink);font-size:12.5px;margin:-8px 0 10px;display:none}.modal-actions{display:flex;gap:8px}.modal-actions button{flex:1;padding:11px;border-radius:12px;font-size:14px;font-weight:600}.cancel-button{background:var(--card-bg);border:1px solid var(--line);color:var(--ink-soft)}.save-button{background:var(--accent);color:var(--accent-ink);border:0}.meal-options{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}.meal-option{padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card-bg);color:var(--ink);font-size:15px;font-weight:600;text-align:left}.formsec-head{font-size:14px;font-weight:700;margin:18px 0 10px}.ingr-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}.ingr-row input,.ingr-row select{margin:0}.iname{flex:1 1 120px}.iamount{flex:1 1 90px}.igroup{flex:0 0 128px}.rowdel{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--line);color:var(--ink-soft)}.step-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}.stepnum{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:8px}.step-row textarea{flex:1;margin:0}.addrow-btn{width:100%;padding:12px;border-radius:12px;border:1.5px dashed var(--accent);background:transparent;color:var(--accent);font-size:13.5px;font-weight:600;margin-bottom:18px}.settings-actions{display:grid;gap:9px;margin-top:14px}.setting-btn{width:100%;border:1px solid var(--line);background:var(--card-bg);color:var(--ink);padding:12px 14px;border-radius:12px;font-size:14px;font-weight:700;text-align:left}.setting-btn.primary{background:var(--accent);color:var(--accent-ink)}.setting-btn.danger{background:var(--danger-bg);color:var(--danger-ink)}.detail-section{background:var(--card-bg);border:1px solid var(--line);border-radius:16px;padding:14px 15px;margin-top:10px}.action-row{display:flex;gap:8px;margin-top:16px}.action-row button{flex:1;padding:11px;border-radius:12px}.back-button{border:1px solid var(--line);background:var(--card-bg);color:var(--ink-soft);border-radius:12px;padding:9px 14px;margin-bottom:14px}.delete-button{background:var(--danger-bg);border:0;color:var(--danger-ink)}.edit-button{background:var(--card-bg);border:1px solid var(--line);color:var(--ink-soft)}
-</style></head>
-<body><div id="app">
-<header class="top"><div class="emoji">🥗</div><div><h1>我的一日三餐</h1><div class="sub">菜单 · 今日菜单 · 点菜记录</div></div></header>
-<nav class="tabbar"><button data-tab="menu" class="active" onclick="switchTab('menu')">🍽️ 菜单</button><button data-tab="today" onclick="switchTab('today')">📅 今日菜单</button><button data-tab="record" onclick="switchTab('record')">📋 点菜记录</button><button data-tab="settings" onclick="switchTab('settings')">⚙️ 设置</button></nav>
-<section id="menuSection" class="section active"><div class="sectionhead"><h2>🍽️ 菜单</h2><button class="pillbtn" onclick="openAddFood()">＋ 增加食物</button></div><div class="subtabs"><button class="subtab active" data-category="全部" onclick="changeCategory('全部')">全部</button><button class="subtab" data-category="早餐" onclick="changeCategory('早餐')">早餐</button><button class="subtab" data-category="午餐/晚餐" onclick="changeCategory('午餐/晚餐')">午餐/晚餐</button></div><div id="foodList"></div></section>
-<section id="todaySection" class="section"><div class="sectionhead"><h2>📅 今日菜单</h2></div><div id="todayList"></div></section>
-<section id="recordSection" class="section"><div class="sectionhead"><h2>📋 点菜记录</h2></div><div id="recordList"></div></section>
-<section id="settingsSection" class="section"><div class="sectionhead"><h2>⚙️ 设置</h2></div><div class="card"><div class="card-title">☁️ 资料备份</div><div class="settings-actions"><button class="setting-btn primary" onclick="exportData()">💾 导出我的资料</button><button class="setting-btn" onclick="document.getElementById('importFile').click()">📂 导入我的资料</button><input id="importFile" type="file" accept=".json" style="display:none" onchange="importData(event)"></div></div><div class="card"><button class="setting-btn danger" onclick="confirmResetData()">🔄 恢复默认资料</button></div></section>
+*{box-sizing:border-box}
+:root{--bg:#fff7e7;--card:#fffdf8;--ink:#43382d;--muted:#8b7c6c;--line:#eadcc8;--accent:#d99554;--soft:#f7e7ca;--doctor:#dceee7;--shadow:0 8px 24px rgba(86,63,37,.09)}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Arial,sans-serif;color:var(--ink);background:linear-gradient(160deg,#fffaf0,#f7e1b8)}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.wrap{max-width:720px;margin:auto;padding:18px 16px 110px}
+.header{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 18px}
+.title h1{font-size:27px;margin:0 0 4px}.title p{margin:0;color:var(--muted);font-size:13px}
+.iconBtn{border:0;background:#fff9ed;border-radius:14px;padding:10px 12px;box-shadow:var(--shadow)}
+.hero{background:rgba(255,253,248,.92);border:1px solid rgba(255,255,255,.7);border-radius:24px;padding:18px;box-shadow:var(--shadow);margin-bottom:14px}
+.heroTop{display:flex;justify-content:space-between;gap:12px;align-items:center}
+.hero h2{margin:0 0 5px;font-size:19px}.hero p{margin:0;color:var(--muted);font-size:13px;line-height:1.5}
+.doctorBtn{border:0;background:var(--doctor);color:#365f50;padding:11px 14px;border-radius:14px;font-weight:700;white-space:nowrap}
+.search{width:100%;border:1px solid var(--line);background:#fff;border-radius:15px;padding:12px 14px;outline:none;margin:2px 0 12px}
+.tabs{display:flex;gap:8px;overflow:auto;padding-bottom:5px;margin-bottom:10px}
+.tab{border:1px solid var(--line);background:#fffaf1;padding:8px 13px;border-radius:999px;color:#725f4c;white-space:nowrap}
+.tab.active{background:#5b4b3d;color:white;border-color:#5b4b3d}
+.sectionHead{display:flex;justify-content:space-between;align-items:center;margin:14px 3px 9px}
+.sectionHead b{font-size:16px}.count{font-size:12px;color:var(--muted)}
+.empty{text-align:center;background:rgba(255,255,255,.55);border:1px dashed #dcc9ad;border-radius:18px;padding:35px 15px;color:var(--muted)}
+.card{background:var(--card);border:1px solid rgba(226,210,188,.75);border-radius:20px;padding:15px;margin-bottom:10px;box-shadow:0 5px 16px rgba(83,62,37,.06)}
+.cardTop{display:flex;justify-content:space-between;gap:10px}
+.badge{display:inline-block;font-size:12px;border-radius:999px;padding:5px 9px;background:var(--soft);margin-bottom:7px}
+.badge.doctor{background:var(--doctor);color:#35604f}
+.card h3{font-size:17px;margin:0 0 6px}.date{font-size:12px;color:var(--muted);white-space:nowrap}
+.note{white-space:pre-wrap;font-size:14px;line-height:1.55;color:#5c4f43;margin-top:8px}
+.meta{margin-top:9px;padding-top:9px;border-top:1px solid #f0e6d8;font-size:13px;line-height:1.7;color:#66594c}
+.actions{display:flex;gap:7px;margin-top:10px;justify-content:flex-end}
+.smallBtn{border:0;border-radius:10px;padding:7px 10px;background:#f4eadc;color:#5d4c3c}
+.danger{background:#f8e3df;color:#934c40}
+.reminder{margin-top:9px;background:#fff2d8;border-radius:12px;padding:8px 10px;font-size:12px;color:#86652d}
+.fab{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);width:min(688px,calc(100% - 32px));border:0;background:#4d4035;color:white;border-radius:18px;padding:15px;font-weight:800;font-size:16px;box-shadow:0 12px 28px rgba(58,45,34,.28)}
+.modal{display:none;position:fixed;inset:0;background:rgba(42,34,27,.38);z-index:20;padding:18px;overflow:auto}
+.modal.show{display:block}.sheet{max-width:680px;margin:30px auto;background:#fffaf2;border-radius:25px;padding:19px;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.sheet h2{margin:2px 0 15px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{margin-bottom:11px}.field label{display:block;font-size:12px;color:#786857;margin:0 0 5px}
+.field input,.field textarea,.field select{width:100%;border:1px solid #e5d6c1;background:white;border-radius:12px;padding:11px;outline:none}
+.field textarea{min-height:88px;resize:vertical}
+.full{grid-column:1/-1}.modalBtns{display:flex;gap:9px;margin-top:8px}.modalBtns button{flex:1;border:0;border-radius:13px;padding:12px;font-weight:700}.save{background:#544538;color:white}.cancel{background:#eee3d4;color:#655647}
+.settingsRow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
+.settingsRow button{border:0;background:#f2e5d2;padding:11px;border-radius:12px}
+.hidden{display:none!important}
+@media(max-width:560px){.grid{grid-template-columns:1fr}.heroTop{align-items:flex-start}.doctorBtn{padding:10px 11px}.sheet{margin:5px auto}.wrap{padding-top:13px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="title"><h1>📒 我的记录本</h1><p>生活小事和看医生资料，都放在这里</p></div>
+    <button class="iconBtn" onclick="openSettings()">⚙️</button>
+  </div>
+
+  <div class="hero">
+    <div class="heroTop">
+      <div><h2>🏥 看医生记录</h2><p>记录医生、诊所、症状、药物、检查和下次复诊。</p></div>
+      <button class="doctorBtn" onclick="openForm('doctor')">＋ 看诊</button>
+    </div>
+  </div>
+
+  <input id="search" class="search" placeholder="🔍 搜索标题、医生、诊所、内容……" oninput="render()">
+  <div class="tabs">
+    <button class="tab active" data-filter="all" onclick="setFilter('all',this)">全部</button>
+    <button class="tab" data-filter="doctor" onclick="setFilter('doctor',this)">🏥 看医生</button>
+    <button class="tab" data-filter="work" onclick="setFilter('work',this)">💼 工作</button>
+    <button class="tab" data-filter="life" onclick="setFilter('life',this)">🏠 生活</button>
+    <button class="tab" data-filter="other" onclick="setFilter('other',this)">📝 其他</button>
+  </div>
+
+  <div class="sectionHead"><b>最近记录</b><span id="count" class="count"></span></div>
+  <div id="list"></div>
 </div>
 
-<div id="foodModal" class="modal"><div class="modal-sheet"><h2 id="foodModalTitle">＋ 增加食物</h2><label>食物名称</label><input id="foodName"><div id="foodNameError" class="field-error">请输入食物名称</div><label>分类</label><select id="foodCategory"><option>早餐</option><option>午餐/晚餐</option></select><label>预设分量（可不填）</label><input id="foodPortion" placeholder="例如：1碗、2片、150g"><label>预设热量 kcal（可不填）</label><input id="foodCalories" type="number" min="0" inputmode="decimal" placeholder="例如：320"><div class="formsec-head">🥕 材料</div><div id="ingrRows"></div><button class="addrow-btn" onclick="addIngredientRow()">➕ 添加材料</button><div class="formsec-head">👩‍🍳 做法</div><div id="stepRows"></div><button class="addrow-btn" onclick="addStepRow()">➕ 添加步骤</button><label>食谱 LINK（可不填）</label><input id="foodLink"><div class="modal-actions"><button class="cancel-button" onclick="closeFoodModal()">取消</button><button class="save-button" onclick="saveFood()">保存</button></div></div></div>
+<button class="fab" onclick="openForm('normal')">＋ 新增记录</button>
 
-<div id="detailModal" class="modal"><div class="modal-sheet"><button class="back-button" onclick="closeDetail()">← 返回</button><h2 id="detailName"></h2><div id="detailInfo" class="meta"></div><div class="detail-section"><b>🥕 材料</b><div id="detailIngredients"></div></div><div class="detail-section"><b>👩🏻‍🍳 做法</b><div id="detailMethod"></div></div><div class="detail-section"><b>🔗 食谱 LINK</b><br><a id="detailLink" target="_blank"></a></div><div class="action-row"><button class="edit-button" onclick="editFood()">✏️ 编辑</button><button class="delete-button" onclick="deleteFood()">🗑️ 删除</button></div><button id="detailPickButton" class="pillbtn" style="width:100%;margin-top:12px" onclick="togglePickFromDetail()">我点 ❤️</button></div></div>
+<div id="formModal" class="modal">
+  <div class="sheet">
+    <h2 id="formTitle">新增记录</h2>
+    <input type="hidden" id="editId">
+    <input type="hidden" id="recordType">
+    <div class="grid">
+      <div class="field"><label>日期</label><input type="date" id="date"></div>
+      <div id="normalCategory" class="field"><label>分类</label>
+        <select id="category"><option value="life">🏠 生活</option><option value="work">💼 工作</option><option value="other">📝 其他</option></select>
+      </div>
+      <div class="field full"><label>标题</label><input id="title" placeholder="例如：今天要记的事情"></div>
 
-<!-- 点菜：餐别 + 本次热量 -->
-<div id="mealModal" class="modal"><div class="modal-sheet meal-sheet"><h2>这次算哪一餐？</h2><label>这次分量（可修改）</label><input id="orderPortion" placeholder="例如：1碗、2片、150g"><div class="meal-options"><button class="meal-option" onclick="chooseMeal('早餐')">🥣 早餐</button><button class="meal-option" onclick="chooseMeal('午餐')">🍱 午餐</button><button class="meal-option" onclick="chooseMeal('晚餐')">🍲 晚餐</button></div><div class="foothint">加入后，可在「今日菜单」修改这次实际吃的卡路里。</div><div class="modal-actions"><button class="cancel-button" onclick="closeMealModal()">取消</button></div></div></div>
+      <div id="doctorFields" class="full hidden">
+        <div class="grid">
+          <div class="field"><label>医院 / 诊所</label><input id="clinic" placeholder="诊所或医院名称"></div>
+          <div class="field"><label>医生名字</label><input id="doctor" placeholder="Dr. ..."></div>
+          <div class="field"><label>科别</label><input id="department" placeholder="例如：骨科、内科"></div>
+          <div class="field"><label>费用</label><input id="cost" inputmode="decimal" placeholder="例如：120.00"></div>
+          <div class="field full"><label>这次为什么看医生 / 症状</label><textarea id="symptoms" placeholder="哪里不舒服、多久了……"></textarea></div>
+          <div class="field full"><label>医生怎么说</label><textarea id="diagnosis" placeholder="医生的说明 / 诊断"></textarea></div>
+          <div class="field full"><label>药物 / 治疗</label><textarea id="treatment" placeholder="药名、治疗方式等"></textarea></div>
+          <div class="field full"><label>检查 / 报告</label><textarea id="tests" placeholder="验血、X-ray、MRI、检查结果等"></textarea></div>
+          <div class="field"><label>下次复诊日期</label><input type="date" id="followup"></div>
+        </div>
+      </div>
 
-<div id="calorieModal" class="modal"><div class="modal-sheet confirm-sheet"><h2>🔥 修改卡路里</h2><div id="calorieFoodName" style="font-weight:700;margin-bottom:10px"></div><label>这次实际吃的卡路里 kcal</label><input id="editOrderCalories" type="number" min="0" inputmode="decimal" placeholder="例如：60"><input id="editOrderId" type="hidden"><div class="modal-actions"><button class="cancel-button" onclick="closeCalorieModal()">取消</button><button class="save-button" onclick="saveOrderCalories()">保存</button></div></div></div>
+      <div class="field full"><label>备注</label><textarea id="notes" placeholder="其他想记录的内容……"></textarea></div>
+    </div>
+    <div class="modalBtns"><button class="cancel" onclick="closeForm()">取消</button><button class="save" onclick="saveRecord()">保存记录</button></div>
+  </div>
+</div>
 
-<div id="confirmModal" class="modal"><div class="modal-sheet confirm-sheet"><div id="confirmMsg" style="margin-bottom:18px"></div><div class="modal-actions"><button class="cancel-button" onclick="closeConfirm()">取消</button><button class="save-button" onclick="runConfirm()">确定</button></div></div></div>
+<div id="settingsModal" class="modal">
+  <div class="sheet">
+    <h2>⚙️ 资料备份</h2>
+    <p style="color:#7c6d5c;font-size:14px;line-height:1.6">记录会保存在这个浏览器里。建议偶尔导出备份，换手机或清除浏览器资料前尤其要备份。</p>
+    <div class="settingsRow">
+      <button onclick="exportData()">📤 导出备份</button>
+      <button onclick="document.getElementById('importFile').click()">📥 导入恢复</button>
+    </div>
+    <input id="importFile" type="file" accept=".json,application/json" class="hidden" onchange="importData(event)">
+    <div class="modalBtns" style="margin-top:16px"><button class="cancel" onclick="closeSettings()">关闭</button></div>
+  </div>
+</div>
 
 <script>
-let foods=JSON.parse(localStorage.getItem("dietFoods")||"[]");
-let orders=JSON.parse(localStorage.getItem("dietOrders")||"[]");
-let currentCategory="全部",currentFoodId=null,pendingPickFoodId=null,pendingConfirmFn=null;
-const CAT_ICON={"早餐":"🥣","午餐":"🍱","晚餐":"🍲","午餐/晚餐":"🍽️"},MEALS=["早餐","午餐","晚餐"];
-const ING_GROUPS=[{key:"主材料",icon:"🍖"},{key:"配料",icon:"🥬"},{key:"调味料",icon:"🧂"},{key:"酱汁",icon:"🥣"},{key:"其他",icon:"✨"}];
-let formIngredients=[],formSteps=[""];
-function getToday(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
-function uid(){return Date.now().toString()+Math.random().toString(16).slice(2)}
-function esc(t){return String(t||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function numCal(v){const n=Number(v);return Number.isFinite(n)&&n>=0?n:0}
-function totalCal(arr){return arr.reduce((s,o)=>s+numCal(o.calories),0)}
-function switchTab(tab){document.querySelectorAll(".tabbar button").forEach(b=>b.classList.toggle("active",b.dataset.tab===tab));["menu","today","record","settings"].forEach(x=>document.getElementById(x+"Section").classList.toggle("active",x===tab));if(tab==="menu")renderFoods();if(tab==="today")renderTodayMenu();if(tab==="record")renderRecords()}
-function changeCategory(c){currentCategory=c;document.querySelectorAll(".subtab").forEach(b=>b.classList.toggle("active",b.dataset.category===c));renderFoods()}
-function findTodayOrder(id){return orders.find(o=>o.foodId===id&&o.date===getToday())}
-function renderFoods(){const list=document.getElementById("foodList");const f=currentCategory==="全部"?foods:currentCategory==="午餐/晚餐"?foods.filter(x=>["午餐","晚餐","午餐/晚餐"].includes(x.category)):foods.filter(x=>x.category===currentCategory);if(!f.length){list.innerHTML='<div class="empty">这里还没有食物<br><br>点击「＋ 增加食物」开始添加 ❤️</div>';return}list.innerHTML=f.map(food=>{const p=findTodayOrder(food.id);return `<div class="card" onclick="openFoodDetail('${food.id}')"><div class="card-head"><div class="card-title">${CAT_ICON[food.category]||"🍽️"} <span class="txt">${esc(food.name)}</span></div><button class="pickpill ${p?"picked":""}" onclick="event.stopPropagation();togglePick('${food.id}')">${p?"✓ "+esc(p.mealTime):"我点"}</button></div><div class="meta"><span class="dot cat">🏷️</span>${esc(food.category)}</div>${food.portion?`<div class="meta">🍽️ 分量：${esc(food.portion)}</div>`:""}${food.calories!==""&&food.calories!=null?`<div class="cal">🔥 ${esc(food.calories)} kcal</div>`:""}<div class="foothint">点击查看详情 →</div></div>${p?`<div class="statusbar">✅ 已加入今日菜单 · ${esc(p.mealTime)}${p.calories!==""&&p.calories!=null?" · 🔥 "+esc(p.calories)+" kcal":""}</div>`:""}`}).join("")}
-function togglePick(id){const e=findTodayOrder(id);if(e){orders=orders.filter(o=>o.id!==e.id);saveData();refreshAllViews()}else openMealModal(id)}
-function togglePickFromDetail(){if(currentFoodId)togglePick(currentFoodId)}
-function openMealModal(id){pendingPickFoodId=id;const f=foods.find(x=>x.id===id);document.getElementById("orderPortion").value=(f&&f.portion)||"";document.getElementById("mealModal").classList.add("show")}
-function closeMealModal(){pendingPickFoodId=null;document.getElementById("mealModal").classList.remove("show")}
-function chooseMeal(meal){
-  const food=foods.find(f=>f.id===pendingPickFoodId);
-  if(!food)return;
-  const defaultCal=(food.calories!==""&&food.calories!=null)?numCal(food.calories):"";
-  orders.push({id:uid(),foodId:food.id,name:food.name,mealTime:meal,date:getToday(),ts:Date.now(),portion:document.getElementById("orderPortion").value.trim(),calories:defaultCal});
-  closeMealModal();saveData();refreshAllViews();
+const KEY='myRecordBook_v1';
+let records=JSON.parse(localStorage.getItem(KEY)||'[]');
+let currentFilter='all';
+const $=id=>document.getElementById(id);
+const today=()=>new Date().toISOString().slice(0,10);
+function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function label(cat){return {doctor:'🏥 看医生',work:'💼 工作',life:'🏠 生活',other:'📝 其他'}[cat]||'📝 其他'}
+function saveAll(){localStorage.setItem(KEY,JSON.stringify(records))}
+function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
+function render(){
+ const q=$('search').value.trim().toLowerCase();
+ let arr=[...records].sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
+ arr=arr.filter(r=>(currentFilter==='all'||r.category===currentFilter)&&(!q||JSON.stringify(r).toLowerCase().includes(q)));
+ $('count').textContent=arr.length+' 条';
+ if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';return}
+ $('list').innerHTML=arr.map(r=>{
+   let meta='';
+   if(r.category==='doctor'){
+     const bits=[];
+     if(r.clinic) bits.push('🏥 '+esc(r.clinic));
+     if(r.doctor) bits.push('👨‍⚕️ '+esc(r.doctor));
+     if(r.department) bits.push('🩺 '+esc(r.department));
+     if(r.symptoms) bits.push('<b>症状：</b>'+esc(r.symptoms));
+     if(r.diagnosis) bits.push('<b>医生说明：</b>'+esc(r.diagnosis));
+     if(r.treatment) bits.push('<b>药物/治疗：</b>'+esc(r.treatment));
+     if(r.tests) bits.push('<b>检查：</b>'+esc(r.tests));
+     if(r.cost) bits.push('💰 '+esc(r.cost));
+     meta=bits.length?'<div class="meta">'+bits.join('<br>')+'</div>':'';
+   }
+   let rem='';
+   if(r.followup){
+     const d=Math.ceil((new Date(r.followup+'T00:00:00')-new Date(today()+'T00:00:00'))/86400000);
+     const txt=d===0?'今天复诊':d>0?`还有 ${d} 天复诊`:`已过复诊日期 ${Math.abs(d)} 天`;
+     rem=`<div class="reminder">📅 下次复诊：${esc(r.followup)} · ${txt}</div>`;
+   }
+   return `<div class="card">
+    <div class="cardTop"><div><span class="badge ${r.category==='doctor'?'doctor':''}">${label(r.category)}</span><h3>${esc(r.title||'未命名记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
+    ${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}${meta}${rem}
+    <div class="actions"><button class="smallBtn" onclick="editRecord('${r.id}')">✏️ 编辑</button><button class="smallBtn danger" onclick="deleteRecord('${r.id}')">🗑️ 删除</button></div>
+   </div>`
+ }).join('');
 }
-function refreshAllViews(){if(document.getElementById("menuSection").classList.contains("active"))renderFoods();if(document.getElementById("todaySection").classList.contains("active"))renderTodayMenu();if(document.getElementById("recordSection").classList.contains("active"))renderRecords();updateDetailPickButton()}
-function updateDetailPickButton(){const b=document.getElementById("detailPickButton");if(!b||!currentFoodId)return;const p=findTodayOrder(currentFoodId);b.textContent=p?`✓ 已加入今日菜单 · ${p.mealTime}`:"我点 ❤️"}
-function renderTodayMenu(){const t=orders.filter(o=>o.date===getToday());let h=`<div class="cal-summary"><div><div class="label">🔥 今日总卡路里</div><div class="foothint">根据点菜时记录的热量自动统计</div></div><div class="value">${Math.round(totalCal(t))} kcal</div></div><div class="card">`;MEALS.forEach(m=>{const a=t.filter(o=>o.mealTime===m);h+=`<div class="group"><h3 class="groupname">${CAT_ICON[m]} ${m}</h3>`;h+=a.length?a.map(i=>`<div class="record-item"><div><div class="rtxt">${esc(i.name)}${i.portion?` · ${esc(i.portion)}`:""}</div>${i.calories!==""&&i.calories!=null?`<div class="cal">🔥 ${esc(i.calories)} kcal</div>`:"<div class='foothint'>未记录热量</div>"}</div><div style="display:flex;gap:6px"><button class="pickpill" onclick="openCalorieEditor('${i.id}')">🔥 修改</button><button class="cancel-pick" onclick="cancelOrder('${i.id}')">取消</button></div></div>`).join(""):'<div class="empty" style="padding:10px 0">今天还没有选择</div>';h+="</div>"});list=document.getElementById("todayList");list.innerHTML=h+"</div>"}
-function renderRecords(){const l=document.getElementById("recordList");if(!orders.length){l.innerHTML='<div class="empty">还没有点菜记录</div>';return}const bd={};orders.forEach(o=>(bd[o.date]=bd[o.date]||[]).push(o));l.innerHTML=Object.keys(bd).sort().reverse().map(d=>{const day=bd[d];let h=`<div class="card"><div class="datehead">📅 ${d}　🔥 当天 ${Math.round(totalCal(day))} kcal</div>`;MEALS.forEach(m=>day.filter(o=>o.mealTime===m).sort((a,b)=>b.ts-a.ts).forEach(i=>h+=`<div class="record-item"><div><div class="rtxt">${CAT_ICON[m]} ${esc(m)} · ${esc(i.name)}${i.portion?` · ${esc(i.portion)}`:""}</div>${i.calories!==""&&i.calories!=null?`<div class="cal">🔥 ${esc(i.calories)} kcal</div>`:"<div class='foothint'>未记录热量</div>"}</div><button class="delete-record" onclick="deleteRecord('${i.id}')">删除</button></div>`));return h+"</div>"}).join("")}
-function openCalorieEditor(id){
-  const o=orders.find(x=>x.id===id);if(!o)return;
-  document.getElementById("editOrderId").value=id;
-  document.getElementById("calorieFoodName").textContent=o.name;
-  document.getElementById("editOrderCalories").value=(o.calories!==""&&o.calories!=null)?o.calories:"";
-  document.getElementById("calorieModal").classList.add("show");
+function clearForm(){
+ ['editId','title','clinic','doctor','department','cost','symptoms','diagnosis','treatment','tests','followup','notes'].forEach(id=>$(id).value='');
+ $('date').value=today(); $('category').value='life';
 }
-function closeCalorieModal(){document.getElementById("calorieModal").classList.remove("show")}
-function saveOrderCalories(){
-  const id=document.getElementById("editOrderId").value;
-  const o=orders.find(x=>x.id===id);if(!o)return;
-  const raw=document.getElementById("editOrderCalories").value.trim();
-  o.calories=raw===""?"":numCal(raw);
-  saveData();closeCalorieModal();refreshAllViews();
+function openForm(type='normal'){
+ clearForm(); $('recordType').value=type;
+ const doc=type==='doctor';
+ $('doctorFields').classList.toggle('hidden',!doc);$('normalCategory').classList.toggle('hidden',doc);
+ $('formTitle').textContent=doc?'🏥 新增看诊记录':'新增记录';$('formModal').classList.add('show');
 }
-function cancelOrder(id){orders=orders.filter(o=>o.id!==id);saveData();refreshAllViews()}
-function deleteRecord(id){showConfirm("确定要删除这条点菜记录吗？",()=>{orders=orders.filter(o=>o.id!==id);saveData();refreshAllViews()})}
-function ingredientsToArray(f){if(Array.isArray(f.ingredients))return f.ingredients.map(i=>({name:i.name||i.text||"",amount:i.amount||"",group:i.group||"主材料"}));return []}
-function stepsToArray(f){if(Array.isArray(f.steps))return f.steps.slice();return typeof f.method==="string"?f.method.split(/\n+/).filter(Boolean):[]}
-function renderIngrRows(){document.getElementById("ingrRows").innerHTML=formIngredients.map((i,x)=>`<div class="ingr-row"><input class="iname" value="${esc(i.name)}" oninput="formIngredients[${x}].name=this.value"><input class="iamount" value="${esc(i.amount)}" oninput="formIngredients[${x}].amount=this.value"><select class="igroup" onchange="formIngredients[${x}].group=this.value">${ING_GROUPS.map(g=>`<option ${i.group===g.key?"selected":""}>${g.key}</option>`).join("")}</select><button class="rowdel" onclick="formIngredients.splice(${x},1);renderIngrRows()">🗑️</button></div>`).join("")}
-function addIngredientRow(){formIngredients.push({name:"",amount:"",group:"主材料"});renderIngrRows()}
-function renderStepRows(){document.getElementById("stepRows").innerHTML=formSteps.map((s,x)=>`<div class="step-row"><div class="stepnum">${x+1}</div><textarea oninput="formSteps[${x}]=this.value">${esc(s)}</textarea></div>`).join("")}
-function addStepRow(){formSteps.push("");renderStepRows()}
-function openAddFood(){currentFoodId=null;document.getElementById("foodModalTitle").textContent="＋ 增加食物";["foodName","foodPortion","foodCalories","foodLink"].forEach(id=>document.getElementById(id).value="");document.getElementById("foodCategory").value="早餐";formIngredients=[{name:"",amount:"",group:"主材料"}];formSteps=[""];renderIngrRows();renderStepRows();document.getElementById("foodModal").classList.add("show")}
-function closeFoodModal(){document.getElementById("foodModal").classList.remove("show")}
-function saveFood(){const n=document.getElementById("foodName").value.trim();if(!n){document.getElementById("foodNameError").style.display="block";return}const raw=document.getElementById("foodCalories").value.trim();const f={id:currentFoodId||uid(),name:n,category:document.getElementById("foodCategory").value,portion:document.getElementById("foodPortion").value.trim(),calories:raw===""?"":numCal(raw),ingredients:formIngredients.filter(i=>i.name.trim()),steps:formSteps.filter(s=>s.trim()),link:document.getElementById("foodLink").value.trim()};if(currentFoodId){const i=foods.findIndex(x=>x.id===currentFoodId);if(i>=0)foods[i]=f}else foods.push(f);saveData();closeFoodModal();renderFoods()}
-function openFoodDetail(id){currentFoodId=id;const f=foods.find(x=>x.id===id);if(!f)return;document.getElementById("detailName").textContent=f.name;document.getElementById("detailInfo").innerHTML=`🏷️ ${esc(f.category)}${f.portion?" · 🍽️ "+esc(f.portion):""}${f.calories!==""&&f.calories!=null?" · 🔥 "+esc(f.calories)+" kcal":""}`;document.getElementById("detailIngredients").innerHTML=ingredientsToArray(f).map(i=>`<div>${esc(i.name)} ${esc(i.amount)}</div>`).join("")||"没有填写";document.getElementById("detailMethod").innerHTML=stepsToArray(f).map((s,i)=>`<div>${i+1}. ${esc(s)}</div>`).join("")||"没有填写";const a=document.getElementById("detailLink");a.textContent=f.link||"没有填写";if(f.link)a.href=f.link;else a.removeAttribute("href");updateDetailPickButton();document.getElementById("detailModal").classList.add("show")}
-function closeDetail(){document.getElementById("detailModal").classList.remove("show")}
-function editFood(){const f=foods.find(x=>x.id===currentFoodId);if(!f)return;closeDetail();document.getElementById("foodModalTitle").textContent="✏️ 编辑食物";document.getElementById("foodName").value=f.name;document.getElementById("foodCategory").value=f.category;document.getElementById("foodPortion").value=f.portion||"";document.getElementById("foodCalories").value=f.calories||"";document.getElementById("foodLink").value=f.link||"";formIngredients=ingredientsToArray(f);if(!formIngredients.length)formIngredients=[{name:"",amount:"",group:"主材料"}];formSteps=stepsToArray(f);if(!formSteps.length)formSteps=[""];renderIngrRows();renderStepRows();document.getElementById("foodModal").classList.add("show")}
-function deleteFood(){const f=foods.find(x=>x.id===currentFoodId);if(!f)return;showConfirm(`确定要删除「${f.name}」吗？`,()=>{foods=foods.filter(x=>x.id!==currentFoodId);saveData();closeDetail();renderFoods()})}
-function showConfirm(m,fn){pendingConfirmFn=fn;document.getElementById("confirmMsg").textContent=m;document.getElementById("confirmModal").classList.add("show")}
-function closeConfirm(){pendingConfirmFn=null;document.getElementById("confirmModal").classList.remove("show")}
-function runConfirm(){const f=pendingConfirmFn;closeConfirm();if(f)f()}
-function saveData(){localStorage.setItem("dietFoods",JSON.stringify(foods));localStorage.setItem("dietOrders",JSON.stringify(orders))}
-function exportData(){const data={app:"我的一日三餐",version:2,exportedAt:new Date().toISOString(),foods,orders};const b=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),u=URL.createObjectURL(b),a=document.createElement("a");a.href=u;a.download=`我的一日三餐_备份_${getToday()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)}
-function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.foods)||!Array.isArray(d.orders))throw 0;foods=d.foods;orders=d.orders;saveData();refreshAllViews();alert("资料已成功导入。")}catch(_){alert("备份文件无法读取。")}};r.readAsText(f)}
-function confirmResetData(){showConfirm("确定要恢复默认资料吗？目前所有资料都会被清除。",()=>{foods=[];orders=[];saveData();refreshAllViews()})}
-saveData();renderFoods();
-</script></body></html>
+function closeForm(){$('formModal').classList.remove('show')}
+function saveRecord(){
+ const type=$('recordType').value;
+ const id=$('editId').value||('r'+Date.now());
+ const old=records.find(x=>x.id===id);
+ const r={id,created:old?.created||Date.now(),date:$('date').value||today(),category:type==='doctor'?'doctor':$('category').value,title:$('title').value.trim(),notes:$('notes').value.trim()};
+ if(type==='doctor') Object.assign(r,{clinic:$('clinic').value.trim(),doctor:$('doctor').value.trim(),department:$('department').value.trim(),cost:$('cost').value.trim(),symptoms:$('symptoms').value.trim(),diagnosis:$('diagnosis').value.trim(),treatment:$('treatment').value.trim(),tests:$('tests').value.trim(),followup:$('followup').value});
+ const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r;else records.push(r);
+ saveAll();closeForm();render();
+}
+function editRecord(id){
+ const r=records.find(x=>x.id===id);if(!r)return;
+ openForm(r.category==='doctor'?'doctor':'normal');$('editId').value=r.id;$('date').value=r.date||today();$('title').value=r.title||'';$('notes').value=r.notes||'';
+ if(r.category!=='doctor')$('category').value=r.category||'life';
+ else ['clinic','doctor','department','cost','symptoms','diagnosis','treatment','tests','followup'].forEach(k=>$(k).value=r[k]||'');
+ $('formTitle').textContent='✏️ 编辑记录';
+}
+function deleteRecord(id){if(confirm('确定要删除这条记录吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
+function openSettings(){$('settingsModal').classList.add('show')}
+function closeSettings(){$('settingsModal').classList.remove('show')}
+function exportData(){
+ const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),records},null,2)],{type:'application/json'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='我的记录本备份_'+today()+'.json';a.click();URL.revokeObjectURL(a.href);
+}
+function importData(e){
+ const f=e.target.files[0];if(!f)return;const reader=new FileReader();
+ reader.onload=()=>{try{const d=JSON.parse(reader.result);const incoming=Array.isArray(d)?d:d.records;if(!Array.isArray(incoming))throw 0;if(confirm('导入会替换目前的记录，确定继续吗？')){records=incoming;saveAll();render();closeSettings();alert('导入完成');}}catch{alert('这个备份文件无法读取。')}e.target.value=''};
+ reader.readAsText(f);
+}
+window.addEventListener('click',e=>{if(e.target===$('formModal'))closeForm();if(e.target===$('settingsModal'))closeSettings()});
+render();
+</script>
+</body>
+</html>
