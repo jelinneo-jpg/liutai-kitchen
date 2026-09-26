@@ -156,6 +156,7 @@ button{cursor:pointer}
   <div id="builtinCopyActions" style="margin:8px 0 12px;display:flex;align-items:center;width:100%;position:relative">
     <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentPage()">📄 复制页面</button>
     <button id="shoppingAddTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="openShoppingForm()">＋ 添加</button>
+    <button id="shoppingShareTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="shareShoppingWhatsApp()">📤 发送清单</button>
     <button id="medicalCopyDeleteTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
     <button id="medicalMoneyTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;display:none;position:absolute;right:0;top:0" onclick="openMoneyModal(activeCustomPageId())">💰 金钱</button>
     <button id="memoAddBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="openMemoForm()">＋ 添加记录</button>
@@ -489,6 +490,7 @@ function setFilter(f,btn){
  if($('medicalMoneyTopBtn')) $('medicalMoneyTopBtn').style.display=med?'inline-block':'none';
  if($('medicalCopyDeleteTopBtn')) $('medicalCopyDeleteTopBtn').style.display=(custom&&layout==='medical')?'inline-block':'none';
  if($('shoppingAddTopBtn')) $('shoppingAddTopBtn').style.display=shopping?'inline-block':'none';
+ if($('shoppingShareTopBtn')) $('shoppingShareTopBtn').style.display=shopping?'inline-block':'none';
  syncMedicalCopySectionMascot(cp,layout);
  syncShoppingSectionMascot(f,cp,layout);
  render();
@@ -631,6 +633,18 @@ function openPhotoViewer(id){
  $('photoViewerImg').src=r.photo;$('photoViewerModal').classList.add('show');
 }
 function closePhotoViewer(){$('photoViewerModal').classList.remove('show');$('photoViewerImg').src=''}
+
+
+function shareShoppingWhatsApp(){
+ const pageId=activeCustomPageId();
+ const items=records.filter(r=>r.category==='shopping'&&!r.done&&((pageId&&r.customPageId===pageId)||(!pageId&&!r.customPageId)));
+ if(!items.length){alert('目前没有未完成的购物物品');return}
+ const page=currentCustomPage();
+ const title=page?.name||'购物清单';
+ const lines=items.map(r=>`☐ ${r.title}${r.notes?` — ${r.notes}`:''}`);
+ const text=`🛒 ${title}\n\n${lines.join('\n')}`;
+ window.location.href='https://wa.me/?text='+encodeURIComponent(text);
+}
 
 function toggleShopping(id){const r=records.find(x=>x.id===id);if(r){r.done=!r.done;saveAll();render()}}
 function deleteShopping(id){if(confirm('确定删除这个物品吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
