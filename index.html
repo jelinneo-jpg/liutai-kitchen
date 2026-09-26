@@ -446,7 +446,7 @@ function setFilter(f,btn){
  const memoCustom=custom&&layout==='memo';
  if($('doctorActionBtn')) $('doctorActionBtn').textContent=(custom&&layout==='medical'?(cp.doctorButtonName||'＋ 新增'):'＋ 新增');
  if($('packageActionBtn')) $('packageActionBtn').textContent=(custom&&layout==='medical'?(cp.packageButtonName||'＋ 配套'):'＋ 配套');
-  const builtinCopy=['life','medical','special','shopping'].includes(f)||memoCustom;
+  const builtinCopy=['life','medical','special','shopping'].includes(f)||memoCustom||(custom&&layout==='medical');
   if($('builtinCopyActions')) $('builtinCopyActions').style.display=builtinCopy?'block':'none';
 
  const ma=$('medicalActions'), sa=$('specialActions'), sha=$('shoppingActions'),
