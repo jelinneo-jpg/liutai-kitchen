@@ -285,8 +285,8 @@ button{cursor:pointer}
     <div class="grid">
       <div class="field full"><label>配套名称</label><input id="packageName" placeholder="例如：Chiro 配套"></div>
       <div class="field"><label>配套金额</label><input id="packageAmount" inputmode="decimal" placeholder="例如：1200.00"></div>
-      <div class="field"><label>拉腰 / 拉颈项共享次数</label><input id="packageStretchTotal" type="number" min="1" value="16"></div>
-      <div class="field"><label>Chiro 次数</label><input id="packageChiroTotal" type="number" min="1" value="8"></div>
+      <div class="field"><label>次数项目 1 名称</label><input id="packageStretchLabel" value="拉腰 / 拉颈项" placeholder="例如：拉腰 / 拉颈项"></div><div class="field"><label>次数项目 1 次数</label><input id="packageStretchTotal" type="number" min="0" value="16"></div>
+      <div class="field"><label>次数项目 2 名称</label><input id="packageChiroLabel" value="Chiro" placeholder="例如：Chiro"></div><div class="field"><label>次数项目 2 次数</label><input id="packageChiroTotal" type="number" min="0" value="8"></div>
       <div class="field full"><label>诊所 / 医生（选填）</label><input id="packageClinic" placeholder="例如：ABC Chiropractic"></div>
       <div class="field full"><label>备注（选填）</label><textarea id="packageNotes"></textarea></div>
     </div>
@@ -672,8 +672,8 @@ function render(){
  $('list').innerHTML=arr.map(r=>{
   if(r.category==='medicalRecord')return `<div class="card medCompact"><div class="cardTop"><div style="min-width:0"><div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge doctor">🏥 医疗 · 看医生</span><span class="date">${esc(r.date||'')}</span></div><h3>${esc(r.title||'看医生')}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button><button onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="meta"><b>📝 备注</b><br>${esc(r.notes)}</div>`:''}</div>`;
   if(r.category==='package'){
-   const ss=r.sessions||[],st=Number(r.stretchTotal)||16,ct=Number(r.chiroTotal)||8,su=ss.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0),cu=ss.filter(x=>x.chiro).length,complete=su>=st&&cu>=ct;
-   return `<div class="card medCompact"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3><div class="date">${complete?'✅ 已完成':'使用中'}</div></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openPackageForm('${r.id}')">✏️ 编辑</button><button onclick="deletePackage('${r.id}')">🗑️ 删除</button></div></div></div><div class="meta" style="display:flex;gap:10px;flex-wrap:wrap"><b>拉腰 / 拉颈项：${su}/${st}</b><span>｜</span><b>Chiro：${cu}/${ct}</b></div><div class="actions"><button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 记录治疗'}</button><button class="smallBtn" onclick="togglePackageHistory('${r.id}')">治疗记录 ▼</button></div><div id="history_${r.id}" class="hidden" style="margin-top:10px"></div></div>`;
+   const ss=r.sessions||[],st=(r.stretchTotal??16),ct=(r.chiroTotal??8),sl=r.stretchLabel||'拉腰 / 拉颈项',cl=r.chiroLabel||'Chiro',su=ss.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0),cu=ss.filter(x=>x.chiro).length,complete=(st<=0||su>=st)&&(ct<=0||cu>=ct);
+   return `<div class="card medCompact"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3><div class="date">${complete?'✅ 已完成':'使用中'}</div></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openPackageForm('${r.id}')">✏️ 编辑</button><button onclick="deletePackage('${r.id}')">🗑️ 删除</button></div></div></div><div class="meta" style="display:flex;gap:10px;flex-wrap:wrap">${st>0?`<b>${esc(sl)}：${su}/${st}</b>`:""}${st>0&&ct>0?`<span>｜</span>`:""}${ct>0?`<b>${esc(cl)}：${cu}/${ct}</b>`:""}</div><div class="actions"><button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 记录治疗'}</button><button class="smallBtn" onclick="togglePackageHistory('${r.id}')">治疗记录 ▼</button></div><div id="history_${r.id}" class="hidden" style="margin-top:10px"></div></div>`;
   }
   if(r.category==='special')return `<div class="card medCompact">
    <div class="cardTop">
@@ -823,7 +823,7 @@ function openPackageForm(id=''){
   $('packageFormTitle').textContent=r?'✏️ 编辑配套':'📦 添加配套';
   $('packageName').value=r?.title||'';
   $('packageAmount').value=r?.amount||'';
-  $('packageStretchTotal').value=r?.stretchTotal||16; $('packageChiroTotal').value=r?.chiroTotal||8;
+  $('packageStretchLabel').value=r?.stretchLabel||'拉腰 / 拉颈项'; $('packageStretchTotal').value=(r?.stretchTotal??16); $('packageChiroLabel').value=r?.chiroLabel||'Chiro'; $('packageChiroTotal').value=(r?.chiroTotal??8);
   $('packageClinic').value=r?.clinic||'';
   $('packageNotes').value=r?.notes||'';
   $('packageModal').classList.add('show');
@@ -832,26 +832,26 @@ function closePackageForm(){$('packageModal').classList.remove('show')}
 function savePackage(){
   const id=$('packageEditId').value||('p'+Date.now());
   const old=records.find(x=>x.id===id);
-  const stretchTotal=Math.max(1,parseInt($('packageStretchTotal').value)||16); const chiroTotal=Math.max(1,parseInt($('packageChiroTotal').value)||8);
+  const stretchTotal=Math.max(0,parseInt($('packageStretchTotal').value)||0); const chiroTotal=Math.max(0,parseInt($('packageChiroTotal').value)||0); const stretchLabel=$('packageStretchLabel').value.trim()||'拉腰 / 拉颈项'; const chiroLabel=$('packageChiroLabel').value.trim()||'Chiro';
   const r={id,created:old?.created||Date.now(),date:old?.date||today(),category:'package',customPageId:activeCustomPageId(),
     title:$('packageName').value.trim()||'医生配套',amount:$('packageAmount').value.trim(),
-    stretchTotal,chiroTotal,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
+    stretchLabel,stretchTotal,chiroLabel,chiroTotal,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
   const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r; else records.push(r);
   saveAll();closePackageForm();currentFilter='medical';$('medicalActions').classList.remove('hidden');$('listTitle').textContent='医疗记录';render();
 }
 function openPackageDetail(id){
   currentPackageId=id; const r=records.find(x=>x.id===id); if(!r)return;
   $('detailName').textContent=r.title||'医生配套';
-  const sessions=r.sessions||[], stretchTotal=Number(r.stretchTotal)||16, chiroTotal=Number(r.chiroTotal)||8;
+  const sessions=r.sessions||[], stretchTotal=(r.stretchTotal??16), chiroTotal=(r.chiroTotal??8), stretchLabel=r.stretchLabel||'拉腰 / 拉颈项', chiroLabel=r.chiroLabel||'Chiro';
   const stretchUsed=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0), chiroUsed=sessions.filter(x=>x.chiro).length;
-  $('detailSummary').innerHTML=`${r.amount?'金额：'+esc(r.amount)+'<br>':''}<b>拉腰 / 拉颈项：${stretchUsed} / ${stretchTotal}</b><br><b>Chiro：${chiroUsed} / ${chiroTotal}</b>${r.clinic?'<br>'+esc(r.clinic):''}${r.notes?'<br>'+esc(r.notes):''}`;
+  $('detailSummary').innerHTML=`${r.amount?'金额：'+esc(r.amount)+'<br>':''}${stretchTotal>0?'<b>'+esc(stretchLabel)+'：'+stretchUsed+' / '+stretchTotal+'</b><br>':''}${chiroTotal>0?'<b>'+esc(chiroLabel)+'：'+chiroUsed+' / '+chiroTotal+'</b>':''}${r.clinic?'<br>'+esc(r.clinic):''}${r.notes?'<br>'+esc(r.notes):''}`;
   $('sessionList').innerHTML=sessions.length?sessions.map((x,i)=>{
     const done=[x.waist?'☑ 拉腰':'',x.neck?'☑ 拉颈项':'',(x.stretch&&!x.waist&&!x.neck)?'☑ 拉腰/拉颈项（旧记录）':'',x.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'未勾选项目';
     return `<div class="card" style="box-shadow:none"><div class="cardTop"><b>第 ${i+1} 次</b><span class="date">${esc(x.date||'')}</span></div>
       <div class="note">${done}</div>${x.notes?`<div class="note">${esc(x.notes)}</div>`:''}
       <div class="actions"><button class="smallBtn" onclick="event.stopPropagation();editSession(${i})">✏️ 编辑</button><button class="smallBtn danger" onclick="event.stopPropagation();deleteSession(${i})">🗑️</button></div></div>`;
   }).join(''):'<div class="empty">这个配套还没有使用记录</div>';
-  const complete=stretchUsed>=stretchTotal&&chiroUsed>=chiroTotal;
+  const complete=(stretchTotal<=0||stretchUsed>=stretchTotal)&&(chiroTotal<=0||chiroUsed>=chiroTotal);
   $('addSessionBtn').disabled=complete;
   $('addSessionBtn').textContent=complete?'✅ 配套已完成':'＋ 记录治疗';
   $('packageDetailModal').classList.add('show');
@@ -872,8 +872,8 @@ function saveSession(){
   const test=[...r.sessions]; if(idx==='')test.push(x);else test[Number(idx)]=x;
   const stretchUsed=test.reduce((n,a)=>n+(a.waist?1:0)+(a.neck?1:0)+(a.stretch&&!a.waist&&!a.neck?1:0),0);
   const chiroUsed=test.filter(a=>a.chiro).length;
-  if(stretchUsed>Number(r.stretchTotal||16)){alert('拉腰 / 拉颈项共享的配套次数已经超过 '+Number(r.stretchTotal||16)+' 次。');return}
-  if(chiroUsed>Number(r.chiroTotal||8)){alert('Chiro 配套次数已经超过 '+Number(r.chiroTotal||8)+' 次。');return}
+  if(Number(r.stretchTotal??16)>0&&stretchUsed>Number(r.stretchTotal??16)){alert((r.stretchLabel||'拉腰 / 拉颈项')+' 的配套次数已经超过 '+Number(r.stretchTotal??16)+' 次。');return}
+  if(Number(r.chiroTotal??8)>0&&chiroUsed>Number(r.chiroTotal??8)){alert((r.chiroLabel||'Chiro')+' 配套次数已经超过 '+Number(r.chiroTotal??8)+' 次。');return}
   if(idx==='')r.sessions.push(x);else r.sessions[Number(idx)]=x;
   saveAll();closeSessionForm();currentFilter='medical';render();setTimeout(()=>togglePackageHistory(r.id),0);
 }
