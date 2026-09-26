@@ -135,19 +135,6 @@ button{cursor:pointer}
 #memoModal .cancel{background:#efe3d2;color:#514438}
 #memoModal .save{background:#584536;color:#fff}
 
-
-/* V89: long-press tab reorder */
-#customTabs{display:contents}
-.tab.tabReorderReady{touch-action:pan-x pan-y}
-.tab.tabDragging{
-  opacity:.78;
-  transform:scale(1.04);
-  box-shadow:0 7px 18px #00000020;
-  outline:2px dashed #8a6d50;
-  position:relative;
-  z-index:20;
-}
-
 </style>
 </head>
 <body>
@@ -426,6 +413,13 @@ button{cursor:pointer}
       <button onclick="document.getElementById('importFile').click()">📥 导入恢复</button>
     </div>
     <input id="importFile" type="file" accept=".json,application/json" class="hidden" onchange="importData(event)">
+
+    <div style="margin-top:18px;padding-top:15px;border-top:1px solid #eadcc8">
+      <h3 style="margin:0 0 6px">↔️ 调整页面顺序</h3>
+      <p style="color:#7c6d5c;font-size:13px;margin:0 0 10px">按 ← 或 → 把页面往前 / 往后移动。</p>
+      <div id="pageOrderList"></div>
+    </div>
+
     <div class="modalBtns" style="margin-top:16px"><button class="cancel" onclick="closeSettings()">关闭</button></div>
   </div>
 </div>
@@ -558,6 +552,7 @@ function renderCustomTabs(){
 
  syncCustomMedicalMascot();
  syncCustomShoppingMascot();
+ applyPageOrder();
 }
 
 function toggleMedicalButtonNameFields(){
@@ -943,7 +938,63 @@ function editRecord(id){
  $('formTitle').textContent='✏️ 编辑记录';
 }
 function deleteRecord(id){if(confirm('确定要删除这条记录吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
-function openSettings(){$('settingsModal').classList.add('show')}
+
+const PAGE_ORDER_KEY='myRecordPageOrder_v91';
+function pageOrderKey(btn){
+ const f=btn.getAttribute('data-filter');
+ if(f)return f;
+ const oc=btn.getAttribute('onclick')||'';
+ const m=oc.match(/setFilter\('([^']+)'/);
+ return m?m[1]:'';
+}
+function pageTabs(){
+ return [...document.querySelectorAll('.tabs .tab')].filter(b=>pageOrderKey(b));
+}
+function currentPageOrder(){
+ let saved=[];
+ try{saved=JSON.parse(localStorage.getItem(PAGE_ORDER_KEY)||'[]')}catch(e){}
+ const keys=pageTabs().map(pageOrderKey), valid=saved.filter(k=>keys.includes(k));
+ keys.forEach(k=>{if(!valid.includes(k))valid.push(k)});
+ return valid;
+}
+function applyPageOrder(){
+ const order=currentPageOrder();
+ pageTabs().forEach(btn=>{
+   const n=order.indexOf(pageOrderKey(btn));
+   btn.style.order=n<0?999:n;
+ });
+}
+function pageDisplayName(key){
+ if(key==='life')return '备忘录';
+ if(key==='medical')return '医疗';
+ if(key==='special')return '特别日子';
+ if(key==='shopping')return '购物清单';
+ if(key.startsWith('custom:')){
+   const p=customPages.find(x=>x.id===key.slice(7));
+   return p?.name||'副本页面';
+ }
+ return key;
+}
+function movePageOrder(key,dir){
+ const order=currentPageOrder(),i=order.indexOf(key),j=i+dir;
+ if(i<0||j<0||j>=order.length)return;
+ [order[i],order[j]]=[order[j],order[i]];
+ localStorage.setItem(PAGE_ORDER_KEY,JSON.stringify(order));
+ applyPageOrder();renderPageOrderSettings();
+}
+function renderPageOrderSettings(){
+ const box=$('pageOrderList');if(!box)return;
+ applyPageOrder();
+ const order=currentPageOrder();
+ box.innerHTML=order.map((key,i)=>`
+   <div style="display:flex;align-items:center;gap:8px;background:#fffaf2;border:1px solid #eadcc8;border-radius:12px;padding:8px 9px;margin:7px 0">
+     <div style="flex:1;min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(pageDisplayName(key))}</div>
+     <button class="smallBtn" style="width:42px;height:38px;padding:0;font-size:19px" onclick="movePageOrder('${key}',-1)" ${i===0?'disabled':''}>←</button>
+     <button class="smallBtn" style="width:42px;height:38px;padding:0;font-size:19px" onclick="movePageOrder('${key}',1)" ${i===order.length-1?'disabled':''}>→</button>
+   </div>`).join('');
+}
+
+function openSettings(){renderPageOrderSettings();$('settingsModal').classList.add('show')}
 function closeSettings(){$('settingsModal').classList.remove('show')}
 function exportData(){
  const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),records},null,2)],{type:'application/json'});
@@ -1191,132 +1242,6 @@ if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')
 // (including 复制页面) are shown correctly.
 const initialLifeBtn=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('data-filter')==='life');
 setFilter('life',initialLifeBtn||null);
-
-/* ===== V90: iPhone Safari 页面按钮长按 2 秒拖动排序 ===== */
-const TAB_ORDER_KEY='myRecordTabOrder_v90';
-let reorderTimer=null, draggingTab=null, dragGhost=null;
-let startX=0,startY=0,lastX=0,lastY=0,suppressTabClick=false;
-
-function tabKey(btn){
- const oc=btn.getAttribute('onclick')||'';
- const m=oc.match(/setFilter\('([^']+)'/);
- return m?m[1]:btn.textContent.trim();
-}
-function allTabs(){ return [...document.querySelectorAll('.tabs .tab')]; }
-
-function applySavedTabOrder(){
- let order=[];
- try{order=JSON.parse(localStorage.getItem(TAB_ORDER_KEY)||'[]')}catch(e){}
- const tabs=allTabs(), seen=new Set(order);
- tabs.forEach(b=>{const k=tabKey(b);if(!seen.has(k)){order.push(k);seen.add(k)}});
- tabs.forEach(b=>b.style.order=order.indexOf(tabKey(b)));
-}
-function saveTabOrder(){
- const tabs=allTabs().sort((a,b)=>(+a.style.order)-(+b.style.order));
- localStorage.setItem(TAB_ORDER_KEY,JSON.stringify(tabs.map(tabKey)));
-}
-function makeGhost(btn,x,y){
- const r=btn.getBoundingClientRect();
- const g=btn.cloneNode(true);
- g.removeAttribute('onclick');
- Object.assign(g.style,{
-   position:'fixed',left:(x-r.width/2)+'px',top:(y-r.height/2)+'px',
-   width:r.width+'px',height:r.height+'px',zIndex:'99999',
-   pointerEvents:'none',opacity:'.92',transform:'scale(1.06)',
-   boxShadow:'0 8px 22px #0003',margin:'0'
- });
- document.body.appendChild(g); return g;
-}
-function startDrag(btn,x,y){
- draggingTab=btn;suppressTabClick=true;
- btn.classList.add('tabDragging');
- dragGhost=makeGhost(btn,x,y);
- if(navigator.vibrate)try{navigator.vibrate(35)}catch(e){}
-}
-function moveGhost(x,y){
- if(!dragGhost)return;
- dragGhost.style.left=(x-dragGhost.offsetWidth/2)+'px';
- dragGhost.style.top=(y-dragGhost.offsetHeight/2)+'px';
-}
-function reorderAt(x,y){
- if(!draggingTab)return;
- // Hide ghost briefly so elementFromPoint can see the real tab underneath.
- if(dragGhost)dragGhost.style.display='none';
- const target=document.elementFromPoint(x,y)?.closest?.('.tab');
- if(dragGhost)dragGhost.style.display='';
- if(!target||target===draggingTab||!target.closest('.tabs'))return;
- const tabs=allTabs().sort((a,b)=>(+a.style.order)-(+b.style.order));
- const from=tabs.indexOf(draggingTab),to=tabs.indexOf(target);
- if(from<0||to<0)return;
- tabs.splice(from,1);tabs.splice(to,0,draggingTab);
- tabs.forEach((b,i)=>b.style.order=i);
-}
-function finishDrag(){
- clearTimeout(reorderTimer);reorderTimer=null;
- if(draggingTab){
-   draggingTab.classList.remove('tabDragging');
-   saveTabOrder();
- }
- dragGhost?.remove();dragGhost=null;draggingTab=null;
- setTimeout(()=>suppressTabClick=false,350);
-}
-function bindTabReorder(){
- applySavedTabOrder();
- allTabs().forEach(btn=>{
-  if(btn.dataset.touchReorderBound)return;
-  btn.dataset.touchReorderBound='1';
-
-  btn.addEventListener('touchstart',e=>{
-    if(e.touches.length!==1)return;
-    const t=e.touches[0];
-    startX=lastX=t.clientX;startY=lastY=t.clientY;
-    clearTimeout(reorderTimer);
-    reorderTimer=setTimeout(()=>startDrag(btn,lastX,lastY),2000);
-  },{passive:true});
-
-  btn.addEventListener('touchmove',e=>{
-    if(e.touches.length!==1)return;
-    const t=e.touches[0];lastX=t.clientX;lastY=t.clientY;
-    if(!draggingTab){
-      // Normal swiping/scrolling cancels the long press.
-      if(Math.hypot(lastX-startX,lastY-startY)>10){
-        clearTimeout(reorderTimer);reorderTimer=null;
-      }
-      return;
-    }
-    e.preventDefault();
-    moveGhost(lastX,lastY);
-    reorderAt(lastX,lastY);
-  },{passive:false});
-
-  btn.addEventListener('touchend',e=>{
-    if(draggingTab===btn){e.preventDefault();finishDrag();}
-    else {clearTimeout(reorderTimer);reorderTimer=null;}
-  },{passive:false});
-  btn.addEventListener('touchcancel',finishDrag,{passive:true});
-
-  // Desktop fallback.
-  btn.addEventListener('mousedown',e=>{
-    if(e.button!==0)return;
-    startX=lastX=e.clientX;startY=lastY=e.clientY;
-    clearTimeout(reorderTimer);
-    reorderTimer=setTimeout(()=>startDrag(btn,lastX,lastY),2000);
-  });
-  btn.addEventListener('click',e=>{
-    if(suppressTabClick){e.preventDefault();e.stopImmediatePropagation();}
-  },true);
- });
-}
-document.addEventListener('mousemove',e=>{
- if(!draggingTab)return;
- lastX=e.clientX;lastY=e.clientY;moveGhost(lastX,lastY);reorderAt(lastX,lastY);
-});
-document.addEventListener('mouseup',()=>{if(draggingTab)finishDrag();else clearTimeout(reorderTimer);});
-
-setTimeout(bindTabReorder,0);
-const tabObserverV90=new MutationObserver(()=>setTimeout(bindTabReorder,0));
-const customTabBoxV90=document.getElementById('customTabs');
-if(customTabBoxV90)tabObserverV90.observe(customTabBoxV90,{childList:true});
 </script>
 
 <div id="memoModal" class="modal">
