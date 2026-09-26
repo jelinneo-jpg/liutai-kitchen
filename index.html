@@ -222,7 +222,7 @@ function render(){
  if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';return}
  $('list').innerHTML=arr.map(r=>{
    if(r.category==='medicalRecord'){
-     return `<div class="card"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'医疗记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}<div class="actions"><button class="smallBtn" onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button></div></div>`;
+     return `<div class="card"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'医疗记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}<div class="actions"><button class="smallBtn" onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button><button class="smallBtn danger" onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button></div></div>`;
    }
    if(r.category==='medicalSession'){
      const done=[r.waist?'☑ 拉腰':'',r.neck?'☑ 拉颈项':'',r.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'治疗记录';
@@ -334,6 +334,16 @@ function saveMedicalRecord(){
 }
 function editMedicalRecord(id){openMedicalRecordForm(id)}
 function deleteMedicalRecord(id){if(confirm('确定删除这条医疗记录吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
+
+function deletePackage(id){
+  const r=records.find(x=>x.id===id);
+  if(!r)return;
+  if(confirm('确定删除这个配套吗？配套里面的治疗记录也会一起删除。')){
+    records=records.filter(x=>x.id!==id);
+    saveAll();
+    render();
+  }
+}
 let currentPackageId=null;
 function openPackageForm(id=''){
   $('packageEditId').value=id;
