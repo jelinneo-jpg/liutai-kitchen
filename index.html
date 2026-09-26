@@ -190,17 +190,6 @@ button{cursor:pointer}
     <button class="save" style="width:100%;margin-top:14px" onclick="saveWorkTask()">保存工作</button>
   </div>
 </div>
-
-<div id="todayWorkModal" class="modal">
-  <div class="sheet" style="max-height:88vh;overflow:auto">
-    <div style="display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:white;padding-bottom:8px;z-index:2">
-      <div><h2 style="margin:0">📋 今天做工列表</h2><div id="todayWorkDate" class="date"></div></div>
-      <button class="smallBtn" onclick="closeTodayWork()">✕</button>
-    </div>
-    <div id="todayWorkList"></div>
-  </div>
-</div>
-
 <div id="packageModal" class="modal">
   <div class="sheet">
     <h2 id="packageFormTitle">📦 添加配套</h2>
@@ -329,7 +318,7 @@ function saveWorkTask(){
  saveAll();closeWorkTaskForm();currentFilter='work';render();
 }
 function deleteWork(id){
- if(confirm('确定删除这项工作吗？')){records=records.filter(x=>x.id!==id);saveAll();render();if($('todayWorkModal')?.classList.contains('show'))renderTodayWork()}
+ if(confirm('确定删除这项工作吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}
 }
 function completeWork(id){
  const r=records.find(x=>x.id===id);if(!r)return;r.done=true;r.completedAt=Date.now();saveAll();render();renderTodayWork();
@@ -343,8 +332,8 @@ function moveTomorrow(id){
  r.date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
  r.inToday=false;saveAll();render();renderTodayWork();
 }
-function openTodayWork(){$('todayWorkModal').classList.add('show');renderTodayWork()}
-function closeTodayWork(){$('todayWorkModal').classList.remove('show')}
+function openTodayWork(){ $('todayWorkPage').classList.remove('hidden'); document.body.style.overflow='hidden'; renderTodayWork(); }
+function closeTodayWork(){ $('todayWorkPage').classList.add('hidden'); document.body.style.overflow=''; }
 function renderTodayWork(){
  const today=localToday();$('todayWorkDate').textContent=today;
  const tasks=records.filter(r=>r.category==='workTask'&&r.inToday&&r.date===today);
@@ -637,5 +626,19 @@ function deleteSession(i){
 }
 render();
 </script>
+
+<div id="todayWorkPage" class="hidden" style="min-height:100vh;background:linear-gradient(135deg,#fff8e7 0%,#fff1c9 48%,#f7dfaa 100%);position:fixed;inset:0;z-index:100;overflow:auto">
+  <div style="max-width:950px;margin:auto;padding:18px 16px 90px">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <button class="smallBtn" onclick="closeTodayWork()">← 返回工作</button>
+      <div>
+        <h1 style="margin:0;font-size:23px">📋 今日工作列表</h1>
+        <div id="todayWorkDate" class="date" style="margin-top:3px"></div>
+      </div>
+    </div>
+    <div id="todayWorkList"></div>
+  </div>
+</div>
+
 </body>
 </html>
