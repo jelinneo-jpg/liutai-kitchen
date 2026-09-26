@@ -60,17 +60,20 @@ button{cursor:pointer}
 
   <div class="hero">
     <div class="heroTop">
-      <div><h2>🏥 看医生记录</h2><p>记录医生、诊所、症状、药物、检查和下次复诊。</p></div>
-      <button class="doctorBtn" onclick="openForm('doctor')">＋ 看诊</button>
+      <div><h2>🏥 医生记录</h2><p>记录疗程配套、金额和使用次数；点开配套才显示每次治疗细节。</p></div>
+      <button class="doctorBtn" onclick="openPackageForm()">＋ 新配套</button>
     </div>
   </div>
 
   <input id="search" class="search" placeholder="🔍 搜索标题、医生、诊所、内容……" oninput="render()">
   <div class="tabs">
     <button class="tab active" data-filter="all" onclick="setFilter('all',this)">全部</button>
-    <button class="tab" data-filter="doctor" onclick="setFilter('doctor',this)">🏥 看医生</button>
+    <button class="tab" data-filter="package" onclick="setFilter('package',this)">🏥 医生配套</button>
     <button class="tab" data-filter="work" onclick="setFilter('work',this)">💼 工作</button>
     <button class="tab" data-filter="life" onclick="setFilter('life',this)">🏠 生活</button>
+    <button class="tab" data-filter="medical" onclick="setFilter('medical',this)">🏥 医疗</button>
+    <button class="tab" data-filter="birthday" onclick="setFilter('birthday',this)">🎂 生日</button>
+    <button class="tab" data-filter="anniversary" onclick="setFilter('anniversary',this)">❤️ 纪念日</button>
     <button class="tab" data-filter="other" onclick="setFilter('other',this)">📝 其他</button>
   </div>
 
@@ -88,7 +91,7 @@ button{cursor:pointer}
     <div class="grid">
       <div class="field"><label>日期</label><input type="date" id="date"></div>
       <div id="normalCategory" class="field"><label>分类</label>
-        <select id="category"><option value="life">🏠 生活</option><option value="work">💼 工作</option><option value="other">📝 其他</option></select>
+        <select id="category"><option value="life">🏠 生活</option><option value="work">💼 工作</option><option value="medical">🏥 医疗</option><option value="birthday">🎂 生日</option><option value="anniversary">❤️ 纪念日</option><option value="other">📝 其他</option></select>
       </div>
       <div class="field full"><label>标题</label><input id="title" placeholder="例如：今天要记的事情"></div>
 
@@ -102,7 +105,13 @@ button{cursor:pointer}
           <div class="field full"><label>医生怎么说</label><textarea id="diagnosis" placeholder="医生的说明 / 诊断"></textarea></div>
           <div class="field full"><label>药物 / 治疗</label><textarea id="treatment" placeholder="药名、治疗方式等"></textarea></div>
           <div class="field full"><label>检查 / 报告</label><textarea id="tests" placeholder="验血、X-ray、MRI、检查结果等"></textarea></div>
-          <div class="field"><label>下次复诊日期</label><input type="date" id="followup"></div>
+          <div class="field full"><label>本次项目</label>
+            <div style="display:flex;gap:10px;flex-wrap:wrap">
+              <label style="background:#f6eee2;padding:10px 13px;border-radius:12px"><input type="checkbox" id="waist"> 拉腰</label>
+              <label style="background:#f6eee2;padding:10px 13px;border-radius:12px"><input type="checkbox" id="neck"> 拉颈项</label>
+              <label style="background:#f6eee2;padding:10px 13px;border-radius:12px"><input type="checkbox" id="chiro"> Chiro</label>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -112,6 +121,54 @@ button{cursor:pointer}
   </div>
 </div>
 
+
+<div id="packageModal" class="modal">
+  <div class="sheet">
+    <h2 id="packageFormTitle">🏥 新增医生配套</h2>
+    <input type="hidden" id="packageEditId">
+    <div class="grid">
+      <div class="field full"><label>配套名称</label><input id="packageName" placeholder="例如：Chiro 配套"></div>
+      <div class="field"><label>配套金额</label><input id="packageAmount" inputmode="decimal" placeholder="例如：1200.00"></div>
+      <div class="field"><label>总次数</label><input id="packageTotal" type="number" min="1" value="8"></div>
+      <div class="field full"><label>诊所 / 医生（选填）</label><input id="packageClinic" placeholder="例如：ABC Chiropractic"></div>
+      <div class="field full"><label>备注（选填）</label><textarea id="packageNotes"></textarea></div>
+    </div>
+    <div class="modalBtns"><button class="cancel" onclick="closePackageForm()">取消</button><button class="save" onclick="savePackage()">保存配套</button></div>
+  </div>
+</div>
+
+<div id="packageDetailModal" class="modal">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+      <div><h2 id="detailName" style="margin-bottom:5px"></h2><div id="detailSummary" style="color:#7c6d5c;font-size:13px"></div></div>
+      <button class="smallBtn" onclick="closePackageDetail()">✕</button>
+    </div>
+    <div id="sessionList" style="margin-top:15px"></div>
+    <div class="modalBtns">
+      <button class="cancel" onclick="editCurrentPackage()">✏️ 编辑配套</button>
+      <button class="save" id="addSessionBtn" onclick="openSessionForm()">＋ 记录一次</button>
+    </div>
+  </div>
+</div>
+
+<div id="sessionModal" class="modal">
+  <div class="sheet">
+    <h2 id="sessionTitle">记录治疗</h2>
+    <input type="hidden" id="sessionEditIndex">
+    <div class="grid">
+      <div class="field"><label>日期</label><input id="sessionDate" type="date"></div>
+      <div class="field full"><label>本次项目</label>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <label style="background:#f6eee2;padding:10px 13px;border-radius:12px"><input type="checkbox" id="sessionWaist"> 拉腰</label>
+          <label style="background:#f6eee2;padding:10px 13px;border-radius:12px"><input type="checkbox" id="sessionNeck"> 拉颈项</label>
+          <label style="background:#f6eee2;padding:10px 13px;border-radius:12px"><input type="checkbox" id="sessionChiro"> Chiro</label>
+        </div>
+      </div>
+      <div class="field full"><label>备注</label><textarea id="sessionNotes" placeholder="当天治疗情况、医生说明等"></textarea></div>
+    </div>
+    <div class="modalBtns"><button class="cancel" onclick="closeSessionForm()">取消</button><button class="save" onclick="saveSession()">保存</button></div>
+  </div>
+</div>
 <div id="settingsModal" class="modal">
   <div class="sheet">
     <h2>⚙️ 资料备份</h2>
@@ -132,7 +189,7 @@ let currentFilter='all';
 const $=id=>document.getElementById(id);
 const today=()=>new Date().toISOString().slice(0,10);
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function label(cat){return {doctor:'🏥 看医生',work:'💼 工作',life:'🏠 生活',other:'📝 其他'}[cat]||'📝 其他'}
+function label(cat){return {package:'🏥 医生配套',doctor:'🏥 医生记录',medical:'🏥 医疗',birthday:'🎂 生日',anniversary:'❤️ 纪念日',work:'💼 工作',life:'🏠 生活',other:'📝 其他'}[cat]||'📝 其他'}
 function saveAll(){localStorage.setItem(KEY,JSON.stringify(records))}
 function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
 function render(){
@@ -142,6 +199,21 @@ function render(){
  $('count').textContent=arr.length+' 条';
  if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';return}
  $('list').innerHTML=arr.map(r=>{
+   if(r.category==='package'){
+     const sessions=r.sessions||[], total=Number(r.total)||8, used=sessions.length;
+     const pct=Math.min(100,Math.round(used/total*100));
+     const latest=sessions.length?[...sessions].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]:null;
+     return `<div class="card" onclick="openPackageDetail('${r.id}')" style="cursor:pointer">
+       <div class="cardTop"><div><span class="badge doctor">🏥 医生配套</span><h3>${esc(r.title||'未命名配套')}</h3></div><div class="date">${used>=total?'✅ 已完成':used+' / '+total+' 次'}</div></div>
+       <div class="meta" style="border-top:0;padding-top:2px">
+         ${r.amount?`💰 金额：${esc(r.amount)}<br>`:''}
+         ${r.clinic?`🏥 ${esc(r.clinic)}<br>`:''}
+         <div style="height:9px;background:#eee3d5;border-radius:999px;overflow:hidden;margin:9px 0"><div style="height:100%;width:${pct}%;background:#6e9b89"></div></div>
+         <b>已完成 ${used} / ${total} 次</b>${latest?`<br>最近一次：${esc(latest.date)}`:''}
+       </div>
+       <div style="text-align:right;margin-top:8px;font-size:13px;color:#826d57">点开查看详情 ＞</div>
+     </div>`;
+   }
    let meta='';
    if(r.category==='doctor'){
      const bits=[];
@@ -156,10 +228,9 @@ function render(){
      meta=bits.length?'<div class="meta">'+bits.join('<br>')+'</div>':'';
    }
    let rem='';
-   if(r.followup){
-     const d=Math.ceil((new Date(r.followup+'T00:00:00')-new Date(today()+'T00:00:00'))/86400000);
-     const txt=d===0?'今天复诊':d>0?`还有 ${d} 天复诊`:`已过复诊日期 ${Math.abs(d)} 天`;
-     rem=`<div class="reminder">📅 下次复诊：${esc(r.followup)} · ${txt}</div>`;
+   if(r.category==='doctor' && (r.waist||r.neck||r.chiro)){
+     const done=[r.waist?'☑ 拉腰':'',r.neck?'☑ 拉颈项':'',r.chiro?'☑ Chiro':''].filter(Boolean);
+     rem=`<div class="reminder">本次项目：${done.join('　')}</div>`;
    }
    return `<div class="card">
     <div class="cardTop"><div><span class="badge ${r.category==='doctor'?'doctor':''}">${label(r.category)}</span><h3>${esc(r.title||'未命名记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
@@ -169,14 +240,14 @@ function render(){
  }).join('');
 }
 function clearForm(){
- ['editId','title','clinic','doctor','department','cost','symptoms','diagnosis','treatment','tests','followup','notes'].forEach(id=>$(id).value='');
- $('date').value=today(); $('category').value='life';
+ ['editId','title','clinic','doctor','department','cost','symptoms','diagnosis','treatment','tests','notes'].forEach(id=>$(id).value='');
+ $('date').value=today(); $('category').value='life'; $('waist').checked=false; $('neck').checked=false; $('chiro').checked=false;
 }
 function openForm(type='normal'){
  clearForm(); $('recordType').value=type;
  const doc=type==='doctor';
  $('doctorFields').classList.toggle('hidden',!doc);$('normalCategory').classList.toggle('hidden',doc);
- $('formTitle').textContent=doc?'🏥 新增看诊记录':'新增记录';$('formModal').classList.add('show');
+ $('formTitle').textContent=doc?'🏥 新增医生记录':'新增记录';$('formModal').classList.add('show');
 }
 function closeForm(){$('formModal').classList.remove('show')}
 function saveRecord(){
@@ -184,7 +255,7 @@ function saveRecord(){
  const id=$('editId').value||('r'+Date.now());
  const old=records.find(x=>x.id===id);
  const r={id,created:old?.created||Date.now(),date:$('date').value||today(),category:type==='doctor'?'doctor':$('category').value,title:$('title').value.trim(),notes:$('notes').value.trim()};
- if(type==='doctor') Object.assign(r,{clinic:$('clinic').value.trim(),doctor:$('doctor').value.trim(),department:$('department').value.trim(),cost:$('cost').value.trim(),symptoms:$('symptoms').value.trim(),diagnosis:$('diagnosis').value.trim(),treatment:$('treatment').value.trim(),tests:$('tests').value.trim(),followup:$('followup').value});
+ if(type==='doctor') Object.assign(r,{clinic:$('clinic').value.trim(),doctor:$('doctor').value.trim(),department:$('department').value.trim(),cost:$('cost').value.trim(),symptoms:$('symptoms').value.trim(),diagnosis:$('diagnosis').value.trim(),treatment:$('treatment').value.trim(),tests:$('tests').value.trim(),waist:$('waist').checked,neck:$('neck').checked,chiro:$('chiro').checked});
  const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r;else records.push(r);
  saveAll();closeForm();render();
 }
@@ -192,7 +263,7 @@ function editRecord(id){
  const r=records.find(x=>x.id===id);if(!r)return;
  openForm(r.category==='doctor'?'doctor':'normal');$('editId').value=r.id;$('date').value=r.date||today();$('title').value=r.title||'';$('notes').value=r.notes||'';
  if(r.category!=='doctor')$('category').value=r.category||'life';
- else ['clinic','doctor','department','cost','symptoms','diagnosis','treatment','tests','followup'].forEach(k=>$(k).value=r[k]||'');
+ else {['clinic','doctor','department','cost','symptoms','diagnosis','treatment','tests'].forEach(k=>$(k).value=r[k]||''); $('waist').checked=!!r.waist; $('neck').checked=!!r.neck; $('chiro').checked=!!r.chiro;}
  $('formTitle').textContent='✏️ 编辑记录';
 }
 function deleteRecord(id){if(confirm('确定要删除这条记录吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
@@ -208,6 +279,71 @@ function importData(e){
  reader.readAsText(f);
 }
 window.addEventListener('click',e=>{if(e.target===$('formModal'))closeForm();if(e.target===$('settingsModal'))closeSettings()});
+
+let currentPackageId=null;
+function openPackageForm(id=''){
+  $('packageEditId').value=id;
+  const r=records.find(x=>x.id===id);
+  $('packageFormTitle').textContent=r?'✏️ 编辑医生配套':'🏥 新增医生配套';
+  $('packageName').value=r?.title||'';
+  $('packageAmount').value=r?.amount||'';
+  $('packageTotal').value=r?.total||8;
+  $('packageClinic').value=r?.clinic||'';
+  $('packageNotes').value=r?.notes||'';
+  $('packageModal').classList.add('show');
+}
+function closePackageForm(){$('packageModal').classList.remove('show')}
+function savePackage(){
+  const id=$('packageEditId').value||('p'+Date.now());
+  const old=records.find(x=>x.id===id);
+  const total=Math.max(1,parseInt($('packageTotal').value)||8);
+  const r={id,created:old?.created||Date.now(),date:old?.date||today(),category:'package',
+    title:$('packageName').value.trim()||'医生配套',amount:$('packageAmount').value.trim(),
+    total,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
+  const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r; else records.push(r);
+  saveAll();closePackageForm();render();
+}
+function openPackageDetail(id){
+  currentPackageId=id; const r=records.find(x=>x.id===id); if(!r)return;
+  $('detailName').textContent=r.title||'医生配套';
+  const used=(r.sessions||[]).length,total=Number(r.total)||8;
+  $('detailSummary').innerHTML=`${r.amount?'金额：'+esc(r.amount)+'　':''}进度：<b>${used} / ${total}</b>${r.clinic?'<br>'+esc(r.clinic):''}${r.notes?'<br>'+esc(r.notes):''}`;
+  const sessions=r.sessions||[];
+  $('sessionList').innerHTML=sessions.length?sessions.map((x,i)=>{
+    const done=[x.waist?'☑ 拉腰':'',x.neck?'☑ 拉颈项':'',x.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'未勾选项目';
+    return `<div class="card" style="box-shadow:none"><div class="cardTop"><b>第 ${i+1} 次</b><span class="date">${esc(x.date||'')}</span></div>
+      <div class="note">${done}</div>${x.notes?`<div class="note">${esc(x.notes)}</div>`:''}
+      <div class="actions"><button class="smallBtn" onclick="event.stopPropagation();editSession(${i})">✏️ 编辑</button><button class="smallBtn danger" onclick="event.stopPropagation();deleteSession(${i})">🗑️</button></div></div>`;
+  }).join(''):'<div class="empty">这个配套还没有使用记录</div>';
+  $('addSessionBtn').disabled=used>=total;
+  $('addSessionBtn').textContent=used>=total?'✅ 配套已完成':'＋ 记录一次';
+  $('packageDetailModal').classList.add('show');
+}
+function closePackageDetail(){$('packageDetailModal').classList.remove('show')}
+function editCurrentPackage(){const id=currentPackageId;closePackageDetail();openPackageForm(id)}
+function openSessionForm(){
+  const r=records.find(x=>x.id===currentPackageId); if(!r||(r.sessions||[]).length>=Number(r.total||8))return;
+  $('sessionEditIndex').value='';$('sessionDate').value=today();$('sessionWaist').checked=false;$('sessionNeck').checked=false;$('sessionChiro').checked=false;$('sessionNotes').value='';
+  $('sessionTitle').textContent='记录第 '+((r.sessions||[]).length+1)+' 次治疗';$('sessionModal').classList.add('show');
+}
+function closeSessionForm(){$('sessionModal').classList.remove('show')}
+function saveSession(){
+  const r=records.find(x=>x.id===currentPackageId);if(!r)return;
+  r.sessions=r.sessions||[];
+  const x={date:$('sessionDate').value||today(),waist:$('sessionWaist').checked,neck:$('sessionNeck').checked,chiro:$('sessionChiro').checked,notes:$('sessionNotes').value.trim()};
+  const idx=$('sessionEditIndex').value;
+  if(idx==='')r.sessions.push(x);else r.sessions[Number(idx)]=x;
+  saveAll();closeSessionForm();openPackageDetail(r.id);render();
+}
+function editSession(i){
+  const r=records.find(x=>x.id===currentPackageId),x=r?.sessions?.[i];if(!x)return;
+  $('sessionEditIndex').value=i;$('sessionDate').value=x.date||today();$('sessionWaist').checked=!!x.waist;$('sessionNeck').checked=!!x.neck;$('sessionChiro').checked=!!x.chiro;$('sessionNotes').value=x.notes||'';
+  $('sessionTitle').textContent='✏️ 编辑第 '+(i+1)+' 次';$('sessionModal').classList.add('show');
+}
+function deleteSession(i){
+  if(!confirm('确定删除这一次记录吗？'))return;
+  const r=records.find(x=>x.id===currentPackageId);if(!r)return;r.sessions.splice(i,1);saveAll();openPackageDetail(r.id);render();
+}
 render();
 </script>
 </body>
