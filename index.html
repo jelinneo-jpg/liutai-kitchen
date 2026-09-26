@@ -135,6 +135,19 @@ button{cursor:pointer}
 #memoModal .cancel{background:#efe3d2;color:#514438}
 #memoModal .save{background:#584536;color:#fff}
 
+
+/* V89: long-press tab reorder */
+#customTabs{display:contents}
+.tab.tabReorderReady{touch-action:pan-x pan-y}
+.tab.tabDragging{
+  opacity:.78;
+  transform:scale(1.04);
+  box-shadow:0 7px 18px #00000020;
+  outline:2px dashed #8a6d50;
+  position:relative;
+  z-index:20;
+}
+
 </style>
 </head>
 <body>
@@ -1178,6 +1191,106 @@ if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')
 // (including 复制页面) are shown correctly.
 const initialLifeBtn=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('data-filter')==='life');
 setFilter('life',initialLifeBtn||null);
+
+/* ===== V89: 页面按钮长按 2 秒后拖动排序 ===== */
+const TAB_ORDER_KEY='myRecordTabOrder_v89';
+let tabReorderTimer=null, tabDragging=null, tabMoved=false, tabStartX=0, tabStartY=0;
+
+function tabKey(btn){
+ const oc=btn.getAttribute('onclick')||'';
+ let m=oc.match(/setFilter\('([^']+)'/);
+ if(m)return m[1];
+ return btn.textContent.trim();
+}
+function getAllPageTabs(){
+ return [...document.querySelectorAll('.tabs .tab')];
+}
+function applySavedTabOrder(){
+ const tabs=getAllPageTabs();
+ let order=[];
+ try{order=JSON.parse(localStorage.getItem(TAB_ORDER_KEY)||'[]')}catch(e){}
+ const known=new Set(order);
+ tabs.forEach(b=>{const k=tabKey(b);if(!known.has(k)){order.push(k);known.add(k)}});
+ tabs.forEach(b=>{
+   const n=order.indexOf(tabKey(b));
+   b.style.order=n<0?999:n;
+ });
+}
+function saveCurrentTabOrder(){
+ const tabs=getAllPageTabs().sort((a,b)=>(parseInt(a.style.order)||0)-(parseInt(b.style.order)||0));
+ localStorage.setItem(TAB_ORDER_KEY,JSON.stringify(tabs.map(tabKey)));
+}
+function beginTabDrag(btn,e){
+ tabDragging=btn;tabMoved=false;
+ btn.classList.add('tabDragging');
+ if(navigator.vibrate)try{navigator.vibrate(35)}catch(_){}
+}
+function reorderTabAtPoint(x,y){
+ if(!tabDragging)return;
+ const target=document.elementFromPoint(x,y)?.closest?.('.tab');
+ if(!target||target===tabDragging||!target.closest('.tabs'))return;
+ const tabs=getAllPageTabs().sort((a,b)=>(parseInt(a.style.order)||0)-(parseInt(b.style.order)||0));
+ const a=tabs.indexOf(tabDragging), b=tabs.indexOf(target);
+ if(a<0||b<0)return;
+ tabs.splice(a,1);tabs.splice(b,0,tabDragging);
+ tabs.forEach((el,i)=>el.style.order=i);
+ tabMoved=true;
+}
+function finishTabDrag(){
+ clearTimeout(tabReorderTimer);tabReorderTimer=null;
+ if(tabDragging){
+   tabDragging.classList.remove('tabDragging');
+   saveCurrentTabOrder();
+   const b=tabDragging;
+   setTimeout(()=>{b.dataset.suppressClick='';},180);
+   tabDragging=null;
+ }
+}
+function initTabReorder(){
+ applySavedTabOrder();
+ getAllPageTabs().forEach(btn=>{
+   if(btn.dataset.reorderBound)return;
+   btn.dataset.reorderBound='1';
+   btn.classList.add('tabReorderReady');
+
+   btn.addEventListener('pointerdown',e=>{
+     if(e.pointerType==='mouse'&&e.button!==0)return;
+     tabStartX=e.clientX;tabStartY=e.clientY;
+     clearTimeout(tabReorderTimer);
+     tabReorderTimer=setTimeout(()=>beginTabDrag(btn,e),2000);
+   });
+   btn.addEventListener('pointermove',e=>{
+     if(!tabDragging){
+       if(Math.hypot(e.clientX-tabStartX,e.clientY-tabStartY)>12){
+         clearTimeout(tabReorderTimer);tabReorderTimer=null;
+       }
+       return;
+     }
+     e.preventDefault();
+     reorderTabAtPoint(e.clientX,e.clientY);
+   },{passive:false});
+   btn.addEventListener('pointerup',e=>{
+     if(tabDragging===btn){
+       e.preventDefault();
+       btn.dataset.suppressClick='1';
+       finishTabDrag();
+     }else{
+       clearTimeout(tabReorderTimer);tabReorderTimer=null;
+     }
+   });
+   btn.addEventListener('pointercancel',finishTabDrag);
+   btn.addEventListener('click',e=>{
+     if(btn.dataset.suppressClick==='1'){
+       e.preventDefault();e.stopImmediatePropagation();
+     }
+   },true);
+  });
+}
+setTimeout(initTabReorder,0);
+const tabObserver=new MutationObserver(()=>setTimeout(initTabReorder,0));
+const customTabBox=document.getElementById('customTabs');
+if(customTabBox)tabObserver.observe(customTabBox,{childList:true});
+
 </script>
 
 <div id="memoModal" class="modal">
