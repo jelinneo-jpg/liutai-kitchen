@@ -228,11 +228,24 @@ function saveAll(){localStorage.setItem(KEY,JSON.stringify(records))}
 function setFilter(f,btn){currentFilter=f;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');render()}
 function render(){
  const q=$('search').value.trim().toLowerCase();
- let arr=[...records].filter(r=>r.category!=='package'&&r.category!=='medicalRecord').sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
+ let arr=[];
+ records.forEach(r=>{
+   if(r.category==='package'){
+     (r.sessions||[]).forEach((x,i)=>arr.push({id:r.id+'__session__'+i,category:'medicalSession',date:x.date||r.date,created:(r.created||0)+i,title:r.title||'医疗配套',packageName:r.title||'医疗配套',waist:!!x.waist,neck:!!x.neck,chiro:!!x.chiro,notes:x.notes||''}));
+   } else arr.push(r);
+ });
+ arr.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
  arr=arr.filter(r=>(currentFilter==='all'||r.category===currentFilter)&&(!q||JSON.stringify(r).toLowerCase().includes(q)));
  $('count').textContent=arr.length+' 条';
  if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';return}
  $('list').innerHTML=arr.map(r=>{
+   if(r.category==='medicalRecord'){
+     return `<div class="card"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · ${esc(r.medicalType||'医疗')}</span><h3>${esc(r.title||'医疗记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}<div class="actions"><button class="smallBtn" onclick="openMedicalPage();setTimeout(()=>editMedicalRecord('${r.id}'),0)">✏️ 编辑</button></div></div>`;
+   }
+   if(r.category==='medicalSession'){
+     const done=[r.waist?'☑ 拉腰':'',r.neck?'☑ 拉颈项':'',r.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'治疗记录';
+     return `<div class="card"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 配套治疗</span><h3>${esc(r.packageName)}</h3></div><div class="date">${esc(r.date||'')}</div></div><div class="note">${done}</div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
+   }
    if(r.category==='package'){
      const sessions=r.sessions||[];
      const stretchTotal=Number(r.stretchTotal)||16, chiroTotal=Number(r.chiroTotal)||8;
