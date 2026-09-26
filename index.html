@@ -468,7 +468,7 @@ function setFilter(f,btn){
 
  if($('memoAddBtn')) $('memoAddBtn').style.display=(f==='life'||memoCustom)?'inline-block':'none';
  if($('memoDeleteTopBtn')) $('memoDeleteTopBtn').style.display=memoCustom?'inline-block':'none';
- if($('medicalMoneyTopBtn')) $('medicalMoneyTopBtn').style.display=(f==='medical')?'inline-block':'none';
+ if($('medicalMoneyTopBtn')) $('medicalMoneyTopBtn').style.display=med?'inline-block':'none';
  syncMedicalCopySectionMascot(cp,layout);
  render();
 }
