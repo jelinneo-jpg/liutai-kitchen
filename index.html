@@ -400,7 +400,6 @@ function openPackageDetail(id){
   const sessions=r.sessions||[], stretchTotal=Number(r.stretchTotal)||16, chiroTotal=Number(r.chiroTotal)||8;
   const stretchUsed=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0), chiroUsed=sessions.filter(x=>x.chiro).length;
   $('detailSummary').innerHTML=`${r.amount?'金额：'+esc(r.amount)+'<br>':''}<b>拉腰 / 拉颈项：${stretchUsed} / ${stretchTotal}</b><br><b>Chiro：${chiroUsed} / ${chiroTotal}</b>${r.clinic?'<br>'+esc(r.clinic):''}${r.notes?'<br>'+esc(r.notes):''}`;
-  const sessions=r.sessions||[];
   $('sessionList').innerHTML=sessions.length?sessions.map((x,i)=>{
     const done=[x.waist?'☑ 拉腰':'',x.neck?'☑ 拉颈项':'',(x.stretch&&!x.waist&&!x.neck)?'☑ 拉腰/拉颈项（旧记录）':'',x.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'未勾选项目';
     return `<div class="card" style="box-shadow:none"><div class="cardTop"><b>第 ${i+1} 次</b><span class="date">${esc(x.date||'')}</span></div>
