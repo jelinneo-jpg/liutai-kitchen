@@ -768,7 +768,18 @@ function render(){
           <h3 style="margin-right:auto">${esc(r.title)}</h3>
           ${r.category==='life'?`<button class="dots" onclick="memoMenu('${r.id}')">•••</button>`:''}
         </div></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openCustomRecordForm('${r.id}')">✏️ 编辑</button><button onclick="deleteCustomRecord('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
-  return `<div class="card medCompact"><div class="cardTop"><div><span class="date">${esc(r.date||'')}</span><h3>${esc(r.title||'记录')}</h3></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
+  return `<div class="card medCompact">
+   <div class="cardTop">
+    <div style="min-width:0;flex:1"><span class="date">${esc(r.date||'')}</span><h3>${esc(r.title||'记录')}</h3></div>
+    ${r.category==='life'?`<div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openMemoForm('${r.id}')">✏️ 编辑</button><button onclick="if(confirm('确定删除这条记录吗？')){records=records.filter(x=>String(x.id)!=='${r.id}');saveAll();render()}">🗑️ 删除</button></div></div>`:''}
+   </div>
+   ${r.content?`<div class="note" style="white-space:pre-wrap;margin-top:8px">${esc(r.content)}</div>`:''}
+   ${r.notes?`<div class="note" style="white-space:pre-wrap;margin-top:8px"><b>备注：</b>${esc(r.notes)}</div>`:''}
+   ${r.link&&safeMemoUrl(r.link)?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+      <a class="smallBtn" href="${safeMemoUrl(r.link)}" target="_blank" rel="noopener" style="text-decoration:none;padding:7px 10px">🔗 打开链接</a>
+      <button class="smallBtn" onclick="copyMemoLink('${safeMemoUrl(r.link)}')" style="padding:7px 10px">📋 复制链接</button>
+    </div>`:''}
+  </div>`;
  }).join('');
 }
 function clearForm(){
@@ -1020,6 +1031,21 @@ function memoMenu(id){
  if(action==='1')openMemoForm(id);
  if(action==='2'&&confirm('确定删除这条记录吗？')){
    records=records.filter(x=>String(x.id)!==String(id));saveAll();render();
+ }
+}
+
+async function copyMemoLink(raw){
+ const u=safeMemoUrl(raw);
+ if(!u){alert('没有链接');return}
+ try{
+  await navigator.clipboard.writeText(u);
+  alert('链接已复制');
+ }catch(e){
+  const ta=document.createElement('textarea');
+  ta.value=u;ta.style.position='fixed';ta.style.left='-9999px';
+  document.body.appendChild(ta);ta.select();
+  try{document.execCommand('copy');alert('链接已复制')}catch(err){alert('复制失败，请长按链接复制')}
+  ta.remove();
  }
 }
 renderCustomTabs();
