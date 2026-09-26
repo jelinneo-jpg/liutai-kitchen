@@ -875,7 +875,7 @@ function saveSession(){
   if(Number(r.stretchTotal??16)>0&&stretchUsed>Number(r.stretchTotal??16)){alert((r.stretchLabel||'拉腰 / 拉颈项')+' 的配套次数已经超过 '+Number(r.stretchTotal??16)+' 次。');return}
   if(Number(r.chiroTotal??8)>0&&chiroUsed>Number(r.chiroTotal??8)){alert((r.chiroLabel||'Chiro')+' 配套次数已经超过 '+Number(r.chiroTotal??8)+' 次。');return}
   if(idx==='')r.sessions.push(x);else r.sessions[Number(idx)]=x;
-  saveAll();closeSessionForm();currentFilter='medical';render();setTimeout(()=>togglePackageHistory(r.id),0);
+  saveAll();closeSessionForm();render();setTimeout(()=>togglePackageHistory(r.id),0);
 }
 function editSession(i){
   const r=records.find(x=>x.id===currentPackageId),x=r?.sessions?.[i];if(!x)return;
