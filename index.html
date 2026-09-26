@@ -98,8 +98,9 @@ button{cursor:pointer}
     <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openShoppingForm()">＋ 添加</button>
   </div>
 
-  <div id="customActions" class="hidden" style="margin:10px 0 14px">
-    <button class="save" style="border:0;border-radius:14px;padding:13px;width:100%" onclick="openCustomRecordForm()">＋ 新增记录</button>
+  <div id="customActions" class="hidden" style="margin:10px 0 14px;display:flex;gap:8px;flex-wrap:wrap">
+    <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openCustomRecordForm()">＋ 添加</button>
+    <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
   </div>
 
 <div class="sectionHead"><b id="listTitle">最近记录</b><span id="count" class="count"></span></div>
@@ -215,7 +216,7 @@ button{cursor:pointer}
   <input id="shopNotes" style="width:100%" placeholder="例如：补充装 × 2">
 
   <label style="display:block;margin:12px 0 6px">照片</label>
-  <input id="shopPhoto" type="file" accept="image/*" capture="environment" style="width:100%">
+  <input id="shopPhoto" type="file" accept="image/*" style="width:100%">
   <div id="shopPhotoStatus" class="note" style="margin-top:6px"></div>
 
   <button class="save" style="width:100%;margin-top:18px;border-radius:13px;padding:12px" onclick="saveShopping()">加入清单</button>
@@ -347,20 +348,7 @@ let specialType='birthday', editingSpecial=null, editingShopping=null, editingCu
 function saveCustomPages(){localStorage.setItem('myRecordCustomPages',JSON.stringify(customPages))}
 function renderCustomTabs(){
  const box=$('customTabs'); if(!box)return;
- box.innerHTML=customPages.map(p=>`<span style="display:inline-flex;align-items:center;gap:3px">
-   <button class="tab" onclick="setFilter('custom:${p.id}',this)">${esc(p.icon||'📌')} ${esc(p.name)}</button>
-   <button class="smallBtn" style="padding:6px 8px;border-radius:10px" onclick="event.stopPropagation();openPageManager('${p.id}')">⋯</button>
-  </span>`).join('');
-}
-function openPageManager(id){
- const p=customPages.find(x=>x.id===id);if(!p)return;
- const action=prompt(`管理「${p.name}」页面\\n输入 1 = 修改页面\\n输入 2 = 删除页面`);
- if(action==='1'){
-  const name=prompt('页面名称：',p.name);if(name===null||!name.trim())return;
-  const icon=prompt('图标：',p.icon||'📌');if(icon===null)return;
-  p.name=name.trim();p.icon=icon.trim()||'📌';saveCustomPages();renderCustomTabs();
-  if(currentFilter==='custom:'+id)$('listTitle').textContent=p.icon+' '+p.name;
- }else if(action==='2'){deleteCustomPage(id)}
+ box.innerHTML=customPages.map(p=>`<button class="tab" onclick="setFilter('custom:${p.id}',this)">${esc(p.icon||'📌')} ${esc(p.name)}</button>`).join('');
 }
 
 function openAddPageForm(){$('pageIcon').value='';$('pageName').value='';$('addPageModal').classList.add('show')}
@@ -447,6 +435,17 @@ function closePhotoViewer(){$('photoViewerModal').classList.remove('show');$('ph
 function toggleShopping(id){const r=records.find(x=>x.id===id);if(r){r.done=!r.done;saveAll();render()}}
 function deleteShopping(id){if(confirm('确定删除这个物品吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
 
+function deleteCurrentCustomPage(){
+ const p=currentCustomPage();if(!p)return;
+ if(confirm(`确定删除「${p.name}」页面吗？\n\n页面里面的记录也会一起删除。`)){
+  customPages=customPages.filter(x=>x.id!==p.id);
+  records=records.filter(r=>r.customPageId!==p.id);
+  saveCustomPages();saveAll();renderCustomTabs();
+  currentFilter='life';
+  const lifeBtn=[...document.querySelectorAll('.tab')].find(x=>x.textContent.includes('生活'));
+  setFilter('life',lifeBtn||null);
+ }
+}
 function currentCustomPage(){if(!currentFilter.startsWith('custom:'))return null;return customPages.find(x=>x.id===currentFilter.split(':')[1])}
 function openCustomRecordForm(id=null){
  const p=currentCustomPage();if(!p)return;editingCustomRecord=id;const r=id?records.find(x=>x.id===id):null;
