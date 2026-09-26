@@ -659,10 +659,81 @@ function shareShoppingWhatsApp(){
    </div>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
     <button class="smallBtn" style="padding:12px;border-radius:12px" onclick="document.getElementById('shoppingSharePicker')?.remove()">取消</button>
-    <button class="save" style="border:0;border-radius:12px;padding:12px" onclick="sendSelectedShoppingWhatsApp()">📤 WhatsApp 发送</button>
+    <button class="save" style="border:0;border-radius:12px;padding:12px" onclick="shareSelectedShoppingCard()">📤 分享卡片</button>
    </div>
  </div>`;
  document.body.appendChild(modal);
+}
+
+
+async function shareSelectedShoppingCard(){
+ const modal=document.getElementById('shoppingSharePicker');
+ if(!modal)return;
+ const ids=[...modal.querySelectorAll('input[type=checkbox]:checked')].map(x=>x.value);
+ if(!ids.length){alert('请先选择要发送的物品');return}
+ const selected=ids.map(id=>records.find(r=>r.id===id)).filter(Boolean);
+ const page=currentCustomPage();
+ const title=page?.name||'购物清单';
+
+ const canvas=document.createElement('canvas');
+ const W=1080, pad=76, rowH=92;
+ canvas.width=W;
+ canvas.height=250+selected.length*rowH+70;
+ const ctx=canvas.getContext('2d');
+ ctx.fillStyle='#fff8e7';ctx.fillRect(0,0,canvas.width,canvas.height);
+ ctx.fillStyle='#4b3829';ctx.font='bold 54px Arial,"Microsoft YaHei",sans-serif';
+
+ // Shopping Shin-chan from the Shopping tab.
+ const shoppingTab=[...document.querySelectorAll('.tab')].find(b=>b.getAttribute('onclick')?.includes("setFilter('shopping'"));
+ const mascot=shoppingTab?.querySelector('.tabMascot');
+ let titleX=pad;
+ if(mascot?.src){
+   try{
+     const img=new Image();
+     await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=mascot.src});
+     ctx.drawImage(img,pad,48,105,105);
+     titleX=pad+130;
+   }catch(e){}
+ }
+ ctx.fillText(title,titleX,118);
+
+ ctx.strokeStyle='#decba8';ctx.lineWidth=3;
+ ctx.beginPath();ctx.moveTo(pad,180);ctx.lineTo(W-pad,180);ctx.stroke();
+
+ ctx.font='40px Arial,"Microsoft YaHei",sans-serif';
+ selected.forEach((r,i)=>{
+   const y=250+i*rowH;
+   ctx.fillStyle='#4b3829';
+   ctx.fillText('☐',pad,y);
+   let text=r.title||'';
+   if(r.notes)text+=' — '+r.notes;
+   // simple truncation to keep one clean line
+   while(ctx.measureText(text).width>W-pad*2-70 && text.length>2) text=text.slice(0,-2);
+   if(text!==(r.title||'')+(r.notes?' — '+r.notes:''))text+='…';
+   ctx.fillText(text,pad+65,y);
+ });
+ ctx.fillStyle='#8b7b68';ctx.font='28px Arial,"Microsoft YaHei",sans-serif';
+ ctx.fillText('我的记录本',pad,canvas.height-42);
+
+ const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/png'));
+ if(!blob){alert('卡片生成失败');return}
+ const file=new File([blob],'购物清单.png',{type:'image/png'});
+ modal.remove();
+
+ if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+   try{
+     await navigator.share({files:[file],title:title,text:'购物清单'});
+   }catch(e){
+     if(e?.name!=='AbortError')alert('分享失败，请再试一次');
+   }
+ }else{
+   const a=document.createElement('a');
+   a.href=URL.createObjectURL(blob);
+   a.download='购物清单.png';
+   a.click();
+   setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+   alert('已生成购物清单图片，可从照片/文件分享到 WhatsApp');
+ }
 }
 
 function sendSelectedShoppingWhatsApp(){
