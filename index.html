@@ -78,6 +78,10 @@ button{cursor:pointer}
     <button class="tab" onclick="openAddPageForm()">＋ 添加页面</button>
 </div>
 
+  <div id="builtinCopyActions" style="margin:8px 0 12px">
+    <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentPage()">📄 复制页面</button>
+  </div>
+
   <div id="medicalActions" class="hidden" style="display:none;margin:10px 0 14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openMedicalRecordForm()">＋ 看医生</button>
@@ -85,7 +89,6 @@ button{cursor:pointer}
     </div>
     <div style="text-align:right;margin-top:8px">
       <button class="smallBtn" onclick="openMoneyModal()">💰 金钱</button>
-      <button class="smallBtn" onclick="copyCurrentPage()">📄 复制页面</button>
     </div>
   </div>
 
@@ -97,12 +100,10 @@ button{cursor:pointer}
 
   <div id="specialActions" class="hidden" style="margin:10px 0 14px">
     <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openSpecialForm()">＋ 添加</button>
-    <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentPage()">📄 复制页面</button>
   </div>
 
   <div id="shoppingActions" class="hidden" style="margin:10px 0 14px">
     <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openShoppingForm()">＋ 添加</button>
-    <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentPage()">📄 复制页面</button>
   </div>
 
   <div id="customActions" class="hidden" style="display:none;margin:10px 0 14px;gap:8px;flex-wrap:wrap">
@@ -110,11 +111,6 @@ button{cursor:pointer}
     <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentCustomPage()">📄 复制页面</button>
     <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
   </div>
-
-<div id="lifeCopyActions" class="hidden" style="margin:8px 0 12px">
-    <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentPage()">📄 复制页面</button>
-  </div>
-
 <div class="sectionHead"><b id="listTitle">最近记录</b><span id="count" class="count"></span></div>
   <div id="list"></div>
 </div>
@@ -359,17 +355,18 @@ function setFilter(f,btn){
  const special=f==='special'||(custom&&layout==='special');
  const shopping=f==='shopping'||(custom&&layout==='checklist');
  const normalCustom=custom&&layout==='normal';
+  const builtinCopy=['life','medical','special','shopping'].includes(f);
+  if($('builtinCopyActions')) $('builtinCopyActions').style.display=builtinCopy?'block':'none';
 
  const ma=$('medicalActions'), sa=$('specialActions'), sha=$('shoppingActions'),
        ca=$('customActions'), da=$('customDeleteActions');
- if(ma) ma.style.display=med?'flex':'none';
- if(sa) sa.style.display=special?'block':'none';
- if(sha) sha.style.display=shopping?'block':'none';
- if(ca) ca.style.display=normalCustom?'flex':'none';
- if(da) da.style.display=(custom&&layout!=='normal')?'block':'none';
+ if(ma){ma.classList.toggle('hidden',!med);ma.style.display=med?'block':'none';}
+ if(sa){sa.classList.toggle('hidden',!special);sa.style.display=special?'block':'none';}
+ if(sha){sha.classList.toggle('hidden',!shopping);sha.style.display=shopping?'block':'none';}
+ if(ca){ca.classList.toggle('hidden',!normalCustom);ca.style.display=normalCustom?'flex':'none';}
+ if(da){const showDelete=custom&&layout!=='normal';da.classList.toggle('hidden',!showDelete);da.style.display=showDelete?'block':'none';}
 
  if($('genericAddBtn')) $('genericAddBtn').style.display=(f==='life')?'':'none';
- if($('lifeCopyActions')) $('lifeCopyActions').classList.toggle('hidden',f!=='life');
 
  $('listTitle').textContent=
    f==='medical'?'医疗记录':
@@ -389,6 +386,15 @@ document.addEventListener('click',()=>document.querySelectorAll('.moreMenu').for
 
 
 let customPages=JSON.parse(localStorage.getItem('myRecordCustomPages')||'[]');
+const CUSTOM_CLEANUP_KEY='myRecordCustomPages_cleanup_v35';
+if(!localStorage.getItem(CUSTOM_CLEANUP_KEY)){
+  const oldIds=new Set(customPages.map(p=>p.id));
+  records=records.filter(r=>!r.customPageId || !oldIds.has(r.customPageId));
+  customPages=[];
+  localStorage.setItem('myRecordCustomPages','[]');
+  localStorage.setItem(KEY,JSON.stringify(records));
+  localStorage.setItem(CUSTOM_CLEANUP_KEY,'1');
+}
 let specialType='birthday', editingSpecial=null, editingShopping=null, editingCustomRecord=null;
 
 function saveCustomPages(){localStorage.setItem('myRecordCustomPages',JSON.stringify(customPages))}
@@ -880,12 +886,11 @@ render();
 renderCustomTabs();
 
 if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')?'':'none';
-if($('lifeCopyActions')) $('lifeCopyActions').classList.toggle('hidden',currentFilter!=='life');
 
-// Functional page action areas are controlled entirely by setFilter().
-['medicalActions','specialActions','shoppingActions','customActions','customDeleteActions'].forEach(id=>{
- const el=$(id); if(el && id!=='medicalActions') el.style.display='none';
-});
+// Initialize the visible page through setFilter so each page's action buttons
+// (including 复制页面) are shown correctly.
+const initialLifeBtn=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('data-filter')==='life');
+setFilter('life',initialLifeBtn||null);
 </script>
 </body>
 </html>
