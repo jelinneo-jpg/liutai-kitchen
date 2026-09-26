@@ -764,7 +764,10 @@ function render(){
    ${r.notes?`<div class="note" style="margin-top:9px">${esc(r.notes)}</div>`:''}
    <div style="margin-top:10px"><button class="smallBtn" style="padding:7px 11px;font-size:14px" onclick="addSpecialToCalendar('${r.id}')">📅 加入日历</button></div>
   </div>`;
-  if(r.category==='custom')return `<div class="card medCompact"><div class="cardTop"><div><span class="date">${esc(r.date||'')}</span>${r.recordCategory?`<span class="badge" style="margin-left:7px">${esc(r.recordCategory)}</span>`:''}<h3>${esc(r.title)}</h3></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openCustomRecordForm('${r.id}')">✏️ 编辑</button><button onclick="deleteCustomRecord('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
+  if(r.category==='custom')return `<div class="card medCompact"><div class="cardTop"><div><span class="date">${esc(r.date||'')}</span>${r.recordCategory?`<span class="badge" style="margin-left:7px">${esc(r.recordCategory)}</span>`:''}<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+          <h3 style="margin-right:auto">${esc(r.title)}</h3>
+          ${r.category==='life'?`<button class="dots" onclick="memoMenu('${r.id}')">•••</button>`:''}
+        </div></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openCustomRecordForm('${r.id}')">✏️ 编辑</button><button onclick="deleteCustomRecord('${r.id}')">🗑️ 删除</button></div></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
   return `<div class="card medCompact"><div class="cardTop"><div><span class="date">${esc(r.date||'')}</span><h3>${esc(r.title||'记录')}</h3></div></div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
  }).join('');
 }
@@ -977,6 +980,7 @@ function openMemoForm(id=null){
  $('memoDate').value=r?.date||today();
  $('memoName').value=r?.title||'';
  $('memoContent').value=r?.content||'';
+ $('memoLink').value=r?.link||'';
  $('memoNotes').value=r?.notes||'';
  $('memoModal').classList.add('show');
 }
@@ -994,6 +998,7 @@ function saveMemo(){
   date:$('memoDate').value||today(),
   title:name,
   content:$('memoContent').value.trim(),
+  link:$('memoLink').value.trim(),
   notes:$('memoNotes').value.trim(),
   created:old?.created||Date.now()
  };
@@ -1001,6 +1006,21 @@ function saveMemo(){
  saveAll();
  closeMemoForm();
  render();
+}
+
+function safeMemoUrl(u){
+ u=(u||'').trim();
+ if(!u)return '';
+ if(!/^https?:\/\//i.test(u))u='https://'+u;
+ try{const x=new URL(u);return (x.protocol==='http:'||x.protocol==='https:')?x.href:''}catch(e){return ''}
+}
+function memoMenu(id){
+ const r=records.find(x=>String(x.id)===String(id)); if(!r)return;
+ const action=prompt('输入 1 编辑，输入 2 删除');
+ if(action==='1')openMemoForm(id);
+ if(action==='2'&&confirm('确定删除这条记录吗？')){
+   records=records.filter(x=>String(x.id)!==String(id));saveAll();render();
+ }
 }
 renderCustomTabs();
 
@@ -1018,6 +1038,7 @@ setFilter('life',initialLifeBtn||null);
   <div class="field"><label>日期</label><input id="memoDate" type="date"></div>
   <div class="field"><label>名称</label><input id="memoName" placeholder="请输入名称"></div>
   <div class="field"><label>内容</label><textarea id="memoContent" placeholder="请输入内容"></textarea></div>
+  <div class="field"><label>链接（选填）</label><input id="memoLink" type="url" inputmode="url" placeholder="https://..."></div>
   <div class="field"><label>备注（选填）</label><textarea id="memoNotes" placeholder="请输入备注"></textarea></div>
   <div class="row">
    <button class="cancel" onclick="closeMemoForm()">取消</button>
