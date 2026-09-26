@@ -91,7 +91,7 @@ button{cursor:pointer}
 
   
   <div id="specialActions" class="hidden" style="margin:10px 0 14px">
-    <button class="save" style="border:0;border-radius:14px;padding:13px;width:100%" onclick="openSpecialForm()">＋ 添加特别日子</button>
+    <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openSpecialForm()">＋ 添加</button>
   </div>
 
   <div id="shoppingActions" class="hidden" style="margin:10px 0 14px">
@@ -176,17 +176,28 @@ button{cursor:pointer}
 
 
 <div id="specialModal" class="modal">
- <div class="sheet">
-  <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="margin:0">✨ 添加特别日子</h2><button class="smallBtn" onclick="closeSpecialForm()">✕</button></div>
-  <label>日期</label><input id="spDate" type="date">
-  <label>名称</label><input id="spTitle" placeholder="例如：妈妈生日">
-  <label>分类</label>
-  <select id="spType">
+ <div class="sheet" style="max-width:520px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+    <h2 style="margin:0">✨ 添加特别日子</h2>
+    <button class="smallBtn" onclick="closeSpecialForm()">✕</button>
+  </div>
+
+  <label style="display:block;margin:12px 0 6px">名称</label>
+  <input id="spTitle" style="width:100%" placeholder="例如：妈妈生日">
+
+  <label style="display:block;margin:12px 0 6px">分类</label>
+  <select id="spType" style="width:100%">
     <option value="birthday">🎂 生日</option>
     <option value="anniversary">💕 纪念日</option>
   </select>
-  <label>备注</label><textarea id="spNotes" rows="3" placeholder="可不填"></textarea>
-  <button class="save" style="width:100%;margin-top:14px" onclick="saveSpecial()">保存</button>
+
+  <label style="display:block;margin:12px 0 6px">日期</label>
+  <input id="spDate" type="date" style="width:100%">
+
+  <label style="display:block;margin:12px 0 6px">备注</label>
+  <textarea id="spNotes" rows="3" style="width:100%;resize:none" placeholder="可不填"></textarea>
+
+  <button class="save" style="width:100%;margin-top:18px;border-radius:13px;padding:12px" onclick="saveSpecial()">保存</button>
  </div>
 </div>
 
@@ -297,6 +308,7 @@ function setFilter(f,btn){
  if($('specialActions'))$('specialActions').classList.toggle('hidden',!special);
  if($('shoppingActions'))$('shoppingActions').classList.toggle('hidden',!shopping);
  if($('customActions'))$('customActions').classList.toggle('hidden',!custom);
+ if($('genericAddBtn')) $('genericAddBtn').style.display=(f==='life')?'':'none';
  const cp=custom?customPages.find(x=>'custom:'+x.id===f):null;
  $('listTitle').textContent=med?'医疗记录':special?'✨ 特别日子':shopping?'🛒 购物清单':cp?(cp.icon+' '+cp.name):f==='life'?'🏠 生活':'记录';
  render();
@@ -621,6 +633,8 @@ function deleteSession(i){
 render();
 
 renderCustomTabs();
+
+if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')?'':'none';
 </script>
 </body>
 </html>
