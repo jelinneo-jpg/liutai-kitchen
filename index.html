@@ -49,6 +49,16 @@ button{cursor:pointer}
 .settingsRow button{border:0;background:#f2e5d2;padding:11px;border-radius:12px}
 .hidden{display:none!important}
 @media(max-width:560px){.grid{grid-template-columns:1fr}.heroTop{align-items:flex-start}.doctorBtn{padding:10px 11px}.sheet{margin:5px auto}.wrap{padding-top:13px}}
+
+.medCompact{padding:12px 13px;margin-bottom:8px;border-radius:16px}
+.medCompact h3{font-size:16px;margin-bottom:3px}
+.medCompact .meta{margin-top:6px;padding-top:6px}
+.medCompact .actions{margin-top:7px}
+.moreWrap{position:relative}
+.moreBtn{border:0;background:#f4eadc;border-radius:10px;padding:5px 10px;font-size:20px;line-height:1}
+.moreMenu{position:absolute;right:0;top:34px;z-index:8;min-width:120px;background:white;border:1px solid #eadcc8;border-radius:12px;padding:5px;box-shadow:0 8px 24px rgba(60,45,30,.15)}
+.moreMenu button{display:block;width:100%;border:0;background:white;text-align:left;padding:9px 10px;border-radius:8px;color:#5d4c3c}
+.moreMenu button:active{background:#f6eee2}
 </style>
 </head>
 <body>
@@ -230,6 +240,13 @@ function setFilter(f,btn){
  $('listTitle').textContent=med?'医疗记录':'最近记录';
  render();
 }
+function toggleMore(e,id){
+ e.stopPropagation();
+ document.querySelectorAll('.moreMenu').forEach(m=>{if(m.id!==id)m.classList.add('hidden')});
+ const m=$(id); if(m)m.classList.toggle('hidden');
+}
+document.addEventListener('click',()=>document.querySelectorAll('.moreMenu').forEach(m=>m.classList.add('hidden')));
+
 function render(){
  const q=$('search').value.trim().toLowerCase();
  let arr;
@@ -254,13 +271,18 @@ function render(){
 
  $('list').innerHTML=arr.map(r=>{
    if(r.category==='medicalRecord'){
-     return `<div class="card">
-       <div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'看医生')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
-       ${r.notes?`<div class="meta"><b>📝 备注</b><br>${esc(r.notes)}</div>`:''}
-       <div class="actions">
-         <button class="smallBtn" onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button>
-         <button class="smallBtn danger" onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button>
+     return `<div class="card medCompact">
+       <div class="cardTop">
+         <div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'看医生')}</h3><div class="date">${esc(r.date||'')}</div></div>
+         <div class="moreWrap">
+           <button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button>
+           <div id="more_${r.id}" class="moreMenu hidden">
+             <button onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button>
+             <button onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button>
+           </div>
+         </div>
        </div>
+       ${r.notes?`<div class="meta"><b>📝 备注</b><br>${esc(r.notes)}</div>`:''}
      </div>`;
    }
 
@@ -270,10 +292,16 @@ function render(){
      const su=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0);
      const cu=sessions.filter(x=>x.chiro).length;
      const complete=su>=st&&cu>=ct;
-     return `<div class="card">
+     return `<div class="card medCompact">
        <div class="cardTop">
-         <div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3></div>
-         <div class="date">${complete?'✅ 已完成':'使用中'}</div>
+         <div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3><div class="date">${complete?'✅ 已完成':'使用中'}</div></div>
+         <div class="moreWrap">
+           <button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button>
+           <div id="more_${r.id}" class="moreMenu hidden">
+             <button onclick="openPackageForm('${r.id}')">✏️ 编辑</button>
+             <button onclick="deletePackage('${r.id}')">🗑️ 删除</button>
+           </div>
+         </div>
        </div>
        <div class="meta">
          <b>拉腰 / 拉颈项：${su} / ${st}</b><br>
@@ -282,8 +310,6 @@ function render(){
        <div class="actions" style="justify-content:flex-start;flex-wrap:wrap">
          <button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 记录治疗'}</button>
          <button class="smallBtn" onclick="togglePackageHistory('${r.id}')">治疗记录 ▼</button>
-         <button class="smallBtn" onclick="openPackageForm('${r.id}')">✏️ 编辑</button>
-         <button class="smallBtn danger" onclick="deletePackage('${r.id}')">🗑️ 删除</button>
        </div>
        <div id="history_${r.id}" class="hidden" style="margin-top:10px"></div>
      </div>`;
