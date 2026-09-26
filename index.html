@@ -72,6 +72,7 @@ button{cursor:pointer}
     <button class="tab active" data-filter="all" onclick="setFilter('all',this)">全部</button>
     
     <button class="tab" data-filter="work" onclick="setFilter('work',this)">💼 工作</button>
+    <button class="tab" onclick="setFilter('todayWork',this)">📋 今日工作</button>
     <button class="tab" data-filter="life" onclick="setFilter('life',this)">🏠 生活</button>
     <button class="tab" data-filter="medical" onclick="setFilter('medical',this)">🏥 医疗</button>
     <button class="tab" data-filter="birthday" onclick="setFilter('birthday',this)">🎂 生日</button>
@@ -94,7 +95,6 @@ button{cursor:pointer}
       <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openWorkMemoForm()">＋ Memo</button>
       <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openWorkTaskForm()">＋ 工作</button>
     </div>
-    <button class="smallBtn" style="width:100%;margin-top:9px;padding:11px" onclick="openTodayWork()">📋 今天做工列表</button>
   </div>
 
   <div class="sectionHead"><b id="listTitle">最近记录</b><span id="count" class="count"></span></div>
@@ -264,10 +264,10 @@ function setFilter(f,btn){
  currentFilter=f;
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  if(btn)btn.classList.add('active');
- const med=f==='medical', work=f==='work';
+ const med=f==='medical', work=f==='work', today=f==='todayWork';
  if($('medicalActions'))$('medicalActions').classList.toggle('hidden',!med);
  if($('workActions'))$('workActions').classList.toggle('hidden',!work);
- if($('listTitle'))$('listTitle').textContent=med?'医疗记录':work?'工作记录':'最近记录';
+ if($('listTitle'))$('listTitle').textContent=med?'医疗记录':work?'工作记录':today?'📋 今日工作列表':'最近记录';
  render();
 }
 
@@ -321,19 +321,17 @@ function deleteWork(id){
  if(confirm('确定删除这项工作吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}
 }
 function completeWork(id){
- const r=records.find(x=>x.id===id);if(!r)return;r.done=true;r.completedAt=Date.now();saveAll();render();renderTodayWork();
+ const r=records.find(x=>x.id===id);if(!r)return;r.done=true;r.completedAt=Date.now();saveAll();render();
 }
 function undoWork(id){
- const r=records.find(x=>x.id===id);if(!r)return;r.done=false;delete r.completedAt;saveAll();render();renderTodayWork();
+ const r=records.find(x=>x.id===id);if(!r)return;r.done=false;delete r.completedAt;saveAll();render();
 }
 function moveTomorrow(id){
  const r=records.find(x=>x.id===id);if(!r)return;
  const d=new Date();d.setDate(d.getDate()+1);
  r.date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
- r.inToday=false;saveAll();render();renderTodayWork();
+ r.inToday=false;saveAll();render();
 }
-function openTodayWork(){ $('todayWorkPage').classList.remove('hidden'); document.body.style.overflow='hidden'; renderTodayWork(); }
-function closeTodayWork(){ $('todayWorkPage').classList.add('hidden'); document.body.style.overflow=''; }
 function renderTodayWork(){
  const today=localToday();$('todayWorkDate').textContent=today;
  const tasks=records.filter(r=>r.category==='workTask'&&r.inToday&&r.date===today);
@@ -344,7 +342,37 @@ function renderTodayWork(){
  </div>`;
  $('todayWorkList').innerHTML=`<h3 style="margin:16px 0 5px">未完成 <span class="count">${pending.length}</span></h3>${pending.length?pending.map(r=>card(r,false)).join(''):'<div class="note">今天没有未完成工作 🎉</div>'}<h3 style="margin:20px 0 5px">已完成 ✅ <span class="count">${done.length}</span></h3>${done.length?done.map(r=>card(r,true)).join(''):'<div class="note">还没有完成项目</div>'}`;
 }
+
+function renderTodayWorkMain(){
+ const today=localToday();
+ const tasks=records.filter(r=>r.category==='workTask'&&r.inToday&&r.date===today);
+ const pending=tasks.filter(r=>!r.done), done=tasks.filter(r=>r.done);
+ $('count').textContent=tasks.length+' 条';
+ const item=(r,isDone)=>`<div class="card medCompact">
+   <div style="display:flex;gap:9px;align-items:flex-start">
+     <span style="font-size:18px">${isDone?'✅':'○'}</span>
+     <div style="flex:1;min-width:0">
+       <b style="${isDone?'text-decoration:line-through;opacity:.65':''}">${esc(r.title)}</b>
+       ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
+       <div class="actions" style="margin-top:8px">
+         ${isDone
+           ?`<button class="smallBtn" onclick="undoWork('${r.id}')">↩ 未完成</button>`
+           :`<button class="smallBtn" onclick="completeWork('${r.id}')">✓ 完成</button><button class="smallBtn" onclick="moveTomorrow('${r.id}')">明天再做</button>`}
+         <button class="smallBtn" onclick="openWorkTaskForm('${r.id}')">✏️</button>
+       </div>
+     </div>
+   </div>
+ </div>`;
+ $('list').innerHTML=
+   `<div style="font-size:13px;color:#8b7c6c;margin:0 2px 10px">${today}</div>
+    <h3 style="margin:8px 2px">未完成 <span class="count">${pending.length}</span></h3>
+    ${pending.length?pending.map(r=>item(r,false)).join(''):'<div class="note" style="padding:10px 2px">今天没有未完成工作 🎉</div>'}
+    <h3 style="margin:20px 2px 8px">已完成 ✅ <span class="count">${done.length}</span></h3>
+    ${done.length?done.map(r=>item(r,true)).join(''):'<div class="note" style="padding:10px 2px">还没有完成项目</div>'}`;
+}
 function render(){
+ if(currentFilter==='todayWork'){ renderTodayWorkMain(); return; }
+
  const q=$('search').value.trim().toLowerCase();
  let arr;
 
@@ -626,19 +654,5 @@ function deleteSession(i){
 }
 render();
 </script>
-
-<div id="todayWorkPage" class="hidden" style="min-height:100vh;background:linear-gradient(135deg,#fff8e7 0%,#fff1c9 48%,#f7dfaa 100%);position:fixed;inset:0;z-index:100;overflow:auto">
-  <div style="max-width:950px;margin:auto;padding:18px 16px 90px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
-      <button class="smallBtn" onclick="closeTodayWork()">← 返回工作</button>
-      <div>
-        <h1 style="margin:0;font-size:23px">📋 今日工作列表</h1>
-        <div id="todayWorkDate" class="date" style="margin-top:3px"></div>
-      </div>
-    </div>
-    <div id="todayWorkList"></div>
-  </div>
-</div>
-
 </body>
 </html>
