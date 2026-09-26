@@ -1021,7 +1021,8 @@ function saveMemo(){
  if(old) records[records.indexOf(old)]=obj; else records.push(obj);
  saveAll();
  closeMemoForm();
- setFilter(currentFilter,null);
+ const activeTab=[...document.querySelectorAll('.tab')].find(b=>b.getAttribute('onclick')?.includes(`setFilter('${currentFilter}'`));
+ setFilter(currentFilter,activeTab||null);
 }
 
 function safeMemoUrl(u){
