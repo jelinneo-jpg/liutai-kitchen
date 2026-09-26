@@ -78,7 +78,7 @@ button{cursor:pointer}
     <button class="tab" onclick="openAddPageForm()">＋ 添加页面</button>
 </div>
 
-  <div id="medicalActions" class="hidden" style="margin:10px 0 14px">
+  <div id="medicalActions" class="hidden" style="display:none;margin:10px 0 14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openMedicalRecordForm()">＋ 看医生</button>
       <button class="save" style="border:0;border-radius:14px;padding:13px" onclick="openPackageForm()">＋ 配套</button>
@@ -89,6 +89,10 @@ button{cursor:pointer}
   </div>
 
   
+  <div id="customDeleteActions" class="hidden" style="display:none;margin:8px 0 12px">
+    <button class="smallBtn" style="padding:8px 12px;border-radius:12px" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
+  </div>
+
   <div id="specialActions" class="hidden" style="margin:10px 0 14px">
     <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openSpecialForm()">＋ 添加</button>
   </div>
@@ -97,7 +101,7 @@ button{cursor:pointer}
     <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openShoppingForm()">＋ 添加</button>
   </div>
 
-  <div id="customActions" class="hidden" style="margin:10px 0 14px;display:flex;gap:8px;flex-wrap:wrap">
+  <div id="customActions" class="hidden" style="display:none;margin:10px 0 14px;gap:8px;flex-wrap:wrap">
     <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openCustomRecordForm()">＋ 添加</button>
     <button class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
   </div>
@@ -337,18 +341,35 @@ function setFilter(f,btn){
  currentFilter=f;
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  if(btn)btn.classList.add('active');
- const med=f==='medical', special=f==='special', shopping=f==='shopping', custom=f.startsWith('custom:');
- if($('medicalActions'))$('medicalActions').classList.toggle('hidden',!med);
- if($('specialActions'))$('specialActions').classList.toggle('hidden',!special);
- if($('shoppingActions'))$('shoppingActions').classList.toggle('hidden',!shopping);
- if($('customActions'))$('customActions').classList.toggle('hidden',!custom);
- if($('genericAddBtn')) $('genericAddBtn').style.display=(f==='life')?'':'none';
+
+ const custom=f.startsWith('custom:');
  const cp=custom?customPages.find(x=>'custom:'+x.id===f):null;
- const layoutLabel=cp?.layout==='medical'?'🏥':cp?.layout==='checklist'?'🛒':cp?.layout==='special'?'✨':'';
- $('listTitle').textContent=med?'医疗记录':special?'✨ 特别日子':shopping?'🛒 购物清单':cp?((layoutLabel||cp.icon)+' '+cp.name):f==='life'?'🏠 生活':'记录';
+ const layout=cp?.layout||'normal';
+
+ const med=f==='medical'||(custom&&layout==='medical');
+ const special=f==='special'||(custom&&layout==='special');
+ const shopping=f==='shopping'||(custom&&layout==='checklist');
+ const normalCustom=custom&&layout==='normal';
+
+ const ma=$('medicalActions'), sa=$('specialActions'), sha=$('shoppingActions'),
+       ca=$('customActions'), da=$('customDeleteActions');
+ if(ma) ma.style.display=med?'flex':'none';
+ if(sa) sa.style.display=special?'block':'none';
+ if(sha) sha.style.display=shopping?'block':'none';
+ if(ca) ca.style.display=normalCustom?'flex':'none';
+ if(da) da.style.display=(custom&&layout!=='normal')?'block':'none';
+
+ if($('genericAddBtn')) $('genericAddBtn').style.display=(f==='life')?'':'none';
+
+ $('listTitle').textContent=
+   f==='medical'?'医疗记录':
+   f==='special'?'✨ 特别日子':
+   f==='shopping'?'🛒 购物清单':
+   cp?((cp.icon||'📌')+' '+cp.name):
+   f==='life'?'🏠 生活':'记录';
+
  render();
 }
-
 function toggleMore(e,id){
  e.stopPropagation();
  document.querySelectorAll('.moreMenu').forEach(m=>{if(m.id!==id)m.classList.add('hidden')});
@@ -387,6 +408,13 @@ function deleteCustomPage(id){
  }
 }
 
+function activeCustomPageId(){
+ return currentFilter.startsWith('custom:')?currentFilter.split(':')[1]:'';
+}
+function belongsToCurrentPage(r){
+ const pid=activeCustomPageId();
+ return pid ? r.customPageId===pid : !r.customPageId;
+}
 function openSpecialForm(id=null){
  editingSpecial=id;
  const r=id?records.find(x=>x.id===id):null;
@@ -402,7 +430,7 @@ function saveSpecial(){
  if(!title||!date){alert('请填写日期和名称');return}
  const type=$('spType').value;
  const old=editingSpecial?records.find(x=>x.id===editingSpecial):null;
- const o={id:editingSpecial||('sp'+Date.now()),category:'special',specialType:type,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
+ const o={id:editingSpecial||('sp'+Date.now()),category:'special',customPageId:old?.customPageId||activeCustomPageId(),specialType:type,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingSpecial)]=o}else records.push(o);
  saveAll();closeSpecialForm();currentFilter='special';render();
 }
@@ -442,7 +470,7 @@ async function saveShopping(){
  if(file){
   try{photo=await compressShopPhoto(file)}catch(e){alert('照片读取失败，请重新选择');return}
  }
- const o={id:editingShopping||('sh'+Date.now()),category:'shopping',title,notes:$('shopNotes').value.trim(),photo,done:old?.done||false,created:old?.created||Date.now()};
+ const o={id:editingShopping||('sh'+Date.now()),category:'shopping',customPageId:old?.customPageId||activeCustomPageId(),title,notes:$('shopNotes').value.trim(),photo,done:old?.done||false,created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingShopping)]=o}else records.push(o);
  saveAll();closeShoppingForm();currentFilter='shopping';render();
 }
@@ -516,14 +544,19 @@ function addSpecialToCalendar(id){
 function render(){
  const q=$('search').value.trim().toLowerCase();
  let arr=[];
- if(currentFilter==='medical')arr=records.filter(r=>r.category==='medicalRecord'||r.category==='package');
- else if(currentFilter==='special')arr=records.filter(r=>r.category==='special');
- else if(currentFilter==='shopping')arr=records.filter(r=>r.category==='shopping');
- else if(currentFilter.startsWith('custom:'))arr=records.filter(r=>r.category==='custom'&&r.customPageId===currentFilter.split(':')[1]);
+ const cp=currentFilter.startsWith('custom:')?currentCustomPage():null;
+ const layout=cp?.layout||'';
+ if(currentFilter==='medical')arr=records.filter(r=>(r.category==='medicalRecord'||r.category==='package')&&!r.customPageId);
+ else if(currentFilter==='special')arr=records.filter(r=>r.category==='special'&&!r.customPageId);
+ else if(currentFilter==='shopping')arr=records.filter(r=>r.category==='shopping'&&!r.customPageId);
+ else if(cp&&layout==='medical')arr=records.filter(r=>(r.category==='medicalRecord'||r.category==='package')&&r.customPageId===cp.id);
+ else if(cp&&layout==='special')arr=records.filter(r=>r.category==='special'&&r.customPageId===cp.id);
+ else if(cp&&layout==='checklist')arr=records.filter(r=>r.category==='shopping'&&r.customPageId===cp.id);
+ else if(cp)arr=records.filter(r=>r.category==='custom'&&r.customPageId===cp.id);
  else if(currentFilter==='life')arr=records.filter(r=>r.category==='life');
  arr=arr.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
 
- if(currentFilter==='shopping'){
+ if(currentFilter==='shopping'||(cp&&layout==='checklist')){
   const pending=arr.filter(r=>!r.done),done=arr.filter(r=>r.done);
   $('count').textContent=arr.length+' 项';
   const item=r=>`<div class="card medCompact" style="${r.done?'opacity:.7':''}">
@@ -618,7 +651,7 @@ function openMedicalRecordForm(id=''){
 function closeMedicalRecordForm(){$('medicalRecordModal').classList.remove('show')}
 function saveMedicalRecord(){
   const id=$('medicalRecordId').value||('m'+Date.now()),old=records.find(x=>x.id===id);
-  const r={id,created:old?.created||Date.now(),date:$('medicalDate').value||today(),category:'medicalRecord',medicalType:'看医生',title:$('medicalName').value.trim()||'看医生',amount:$('medicalAmount').value.trim(),notes:$('medicalNotes').value.trim()};
+  const r={id,created:old?.created||Date.now(),date:$('medicalDate').value||today(),category:'medicalRecord',customPageId:activeCustomPageId(),medicalType:'看医生',title:$('medicalName').value.trim()||'看医生',amount:$('medicalAmount').value.trim(),notes:$('medicalNotes').value.trim()};
   const i=records.findIndex(x=>x.id===id);if(i>=0)records[i]=r;else records.push(r);
   saveAll();closeMedicalRecordForm();currentFilter='medical';$('medicalActions').classList.remove('hidden');$('listTitle').textContent='医疗记录';render();
 }
@@ -705,7 +738,7 @@ function savePackage(){
   const id=$('packageEditId').value||('p'+Date.now());
   const old=records.find(x=>x.id===id);
   const stretchTotal=Math.max(1,parseInt($('packageStretchTotal').value)||16); const chiroTotal=Math.max(1,parseInt($('packageChiroTotal').value)||8);
-  const r={id,created:old?.created||Date.now(),date:old?.date||today(),category:'package',
+  const r={id,created:old?.created||Date.now(),date:old?.date||today(),category:'package',customPageId:activeCustomPageId(),
     title:$('packageName').value.trim()||'医生配套',amount:$('packageAmount').value.trim(),
     stretchTotal,chiroTotal,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
   const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r; else records.push(r);
@@ -763,6 +796,11 @@ render();
 renderCustomTabs();
 
 if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')?'':'none';
+
+// Functional page action areas are controlled entirely by setFilter().
+['medicalActions','specialActions','shoppingActions','customActions','customDeleteActions'].forEach(id=>{
+ const el=$(id); if(el && id!=='medicalActions') el.style.display='none';
+});
 </script>
 </body>
 </html>
