@@ -129,7 +129,8 @@ button{cursor:pointer}
     <div class="grid">
       <div class="field full"><label>配套名称</label><input id="packageName" placeholder="例如：Chiro 配套"></div>
       <div class="field"><label>配套金额</label><input id="packageAmount" inputmode="decimal" placeholder="例如：1200.00"></div>
-      <div class="field"><label>总次数</label><input id="packageTotal" type="number" min="1" value="8"></div>
+      <div class="field"><label>拉腰 / 拉颈项共享次数</label><input id="packageStretchTotal" type="number" min="1" value="16"></div>
+      <div class="field"><label>Chiro 次数</label><input id="packageChiroTotal" type="number" min="1" value="8"></div>
       <div class="field full"><label>诊所 / 医生（选填）</label><input id="packageClinic" placeholder="例如：ABC Chiropractic"></div>
       <div class="field full"><label>备注（选填）</label><textarea id="packageNotes"></textarea></div>
     </div>
@@ -200,16 +201,23 @@ function render(){
  if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';return}
  $('list').innerHTML=arr.map(r=>{
    if(r.category==='package'){
-     const sessions=r.sessions||[], total=Number(r.total)||8, used=sessions.length;
-     const pct=Math.min(100,Math.round(used/total*100));
+     const sessions=r.sessions||[];
+     const stretchTotal=Number(r.stretchTotal)||16, chiroTotal=Number(r.chiroTotal)||8;
+     const stretchUsed=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0);
+     const chiroUsed=sessions.filter(x=>x.chiro).length;
+     const stretchPct=Math.min(100,Math.round(stretchUsed/stretchTotal*100));
+     const chiroPct=Math.min(100,Math.round(chiroUsed/chiroTotal*100));
      const latest=sessions.length?[...sessions].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]:null;
      return `<div class="card" onclick="openPackageDetail('${r.id}')" style="cursor:pointer">
-       <div class="cardTop"><div><span class="badge doctor">🏥 医生配套</span><h3>${esc(r.title||'未命名配套')}</h3></div><div class="date">${used>=total?'✅ 已完成':used+' / '+total+' 次'}</div></div>
+       <div class="cardTop"><div><span class="badge doctor">🏥 医生配套</span><h3>${esc(r.title||'未命名配套')}</h3></div><div class="date">${stretchUsed>=stretchTotal&&chiroUsed>=chiroTotal?'✅ 已完成':'治疗配套'}</div></div>
        <div class="meta" style="border-top:0;padding-top:2px">
          ${r.amount?`💰 金额：${esc(r.amount)}<br>`:''}
          ${r.clinic?`🏥 ${esc(r.clinic)}<br>`:''}
-         <div style="height:9px;background:#eee3d5;border-radius:999px;overflow:hidden;margin:9px 0"><div style="height:100%;width:${pct}%;background:#6e9b89"></div></div>
-         <b>已完成 ${used} / ${total} 次</b>${latest?`<br>最近一次：${esc(latest.date)}`:''}
+         <div style="margin-top:8px"><b>拉腰 / 拉颈项　${stretchUsed} / ${stretchTotal}</b>
+         <div style="height:9px;background:#eee3d5;border-radius:999px;overflow:hidden;margin:6px 0 10px"><div style="height:100%;width:${stretchPct}%;background:#6e9b89"></div></div>
+         <b>Chiro　${chiroUsed} / ${chiroTotal}</b>
+         <div style="height:9px;background:#eee3d5;border-radius:999px;overflow:hidden;margin:6px 0 8px"><div style="height:100%;width:${chiroPct}%;background:#6e9b89"></div></div></div>
+         ${latest?`最近一次：${esc(latest.date)}`:''}
        </div>
        <div style="text-align:right;margin-top:8px;font-size:13px;color:#826d57">点开查看详情 ＞</div>
      </div>`;
@@ -287,7 +295,7 @@ function openPackageForm(id=''){
   $('packageFormTitle').textContent=r?'✏️ 编辑医生配套':'🏥 新增医生配套';
   $('packageName').value=r?.title||'';
   $('packageAmount').value=r?.amount||'';
-  $('packageTotal').value=r?.total||8;
+  $('packageStretchTotal').value=r?.stretchTotal||16; $('packageChiroTotal').value=r?.chiroTotal||8;
   $('packageClinic').value=r?.clinic||'';
   $('packageNotes').value=r?.notes||'';
   $('packageModal').classList.add('show');
@@ -296,33 +304,35 @@ function closePackageForm(){$('packageModal').classList.remove('show')}
 function savePackage(){
   const id=$('packageEditId').value||('p'+Date.now());
   const old=records.find(x=>x.id===id);
-  const total=Math.max(1,parseInt($('packageTotal').value)||8);
+  const stretchTotal=Math.max(1,parseInt($('packageStretchTotal').value)||16); const chiroTotal=Math.max(1,parseInt($('packageChiroTotal').value)||8);
   const r={id,created:old?.created||Date.now(),date:old?.date||today(),category:'package',
     title:$('packageName').value.trim()||'医生配套',amount:$('packageAmount').value.trim(),
-    total,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
+    stretchTotal,chiroTotal,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
   const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r; else records.push(r);
   saveAll();closePackageForm();render();
 }
 function openPackageDetail(id){
   currentPackageId=id; const r=records.find(x=>x.id===id); if(!r)return;
   $('detailName').textContent=r.title||'医生配套';
-  const used=(r.sessions||[]).length,total=Number(r.total)||8;
-  $('detailSummary').innerHTML=`${r.amount?'金额：'+esc(r.amount)+'　':''}进度：<b>${used} / ${total}</b>${r.clinic?'<br>'+esc(r.clinic):''}${r.notes?'<br>'+esc(r.notes):''}`;
+  const sessions=r.sessions||[], stretchTotal=Number(r.stretchTotal)||16, chiroTotal=Number(r.chiroTotal)||8;
+  const stretchUsed=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0), chiroUsed=sessions.filter(x=>x.chiro).length;
+  $('detailSummary').innerHTML=`${r.amount?'金额：'+esc(r.amount)+'<br>':''}<b>拉腰 / 拉颈项：${stretchUsed} / ${stretchTotal}</b><br><b>Chiro：${chiroUsed} / ${chiroTotal}</b>${r.clinic?'<br>'+esc(r.clinic):''}${r.notes?'<br>'+esc(r.notes):''}`;
   const sessions=r.sessions||[];
   $('sessionList').innerHTML=sessions.length?sessions.map((x,i)=>{
-    const done=[x.waist?'☑ 拉腰':'',x.neck?'☑ 拉颈项':'',x.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'未勾选项目';
+    const done=[x.waist?'☑ 拉腰':'',x.neck?'☑ 拉颈项':'',(x.stretch&&!x.waist&&!x.neck)?'☑ 拉腰/拉颈项（旧记录）':'',x.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'未勾选项目';
     return `<div class="card" style="box-shadow:none"><div class="cardTop"><b>第 ${i+1} 次</b><span class="date">${esc(x.date||'')}</span></div>
       <div class="note">${done}</div>${x.notes?`<div class="note">${esc(x.notes)}</div>`:''}
       <div class="actions"><button class="smallBtn" onclick="event.stopPropagation();editSession(${i})">✏️ 编辑</button><button class="smallBtn danger" onclick="event.stopPropagation();deleteSession(${i})">🗑️</button></div></div>`;
   }).join(''):'<div class="empty">这个配套还没有使用记录</div>';
-  $('addSessionBtn').disabled=used>=total;
-  $('addSessionBtn').textContent=used>=total?'✅ 配套已完成':'＋ 记录一次';
+  const complete=stretchUsed>=stretchTotal&&chiroUsed>=chiroTotal;
+  $('addSessionBtn').disabled=complete;
+  $('addSessionBtn').textContent=complete?'✅ 配套已完成':'＋ 记录治疗';
   $('packageDetailModal').classList.add('show');
 }
 function closePackageDetail(){$('packageDetailModal').classList.remove('show')}
 function editCurrentPackage(){const id=currentPackageId;closePackageDetail();openPackageForm(id)}
 function openSessionForm(){
-  const r=records.find(x=>x.id===currentPackageId); if(!r||(r.sessions||[]).length>=Number(r.total||8))return;
+  const r=records.find(x=>x.id===currentPackageId); if(!r)return;
   $('sessionEditIndex').value='';$('sessionDate').value=today();$('sessionWaist').checked=false;$('sessionNeck').checked=false;$('sessionChiro').checked=false;$('sessionNotes').value='';
   $('sessionTitle').textContent='记录第 '+((r.sessions||[]).length+1)+' 次治疗';$('sessionModal').classList.add('show');
 }
@@ -332,6 +342,11 @@ function saveSession(){
   r.sessions=r.sessions||[];
   const x={date:$('sessionDate').value||today(),waist:$('sessionWaist').checked,neck:$('sessionNeck').checked,chiro:$('sessionChiro').checked,notes:$('sessionNotes').value.trim()};
   const idx=$('sessionEditIndex').value;
+  const test=[...r.sessions]; if(idx==='')test.push(x);else test[Number(idx)]=x;
+  const stretchUsed=test.reduce((n,a)=>n+(a.waist?1:0)+(a.neck?1:0)+(a.stretch&&!a.waist&&!a.neck?1:0),0);
+  const chiroUsed=test.filter(a=>a.chiro).length;
+  if(stretchUsed>Number(r.stretchTotal||16)){alert('拉腰 / 拉颈项共享的配套次数已经超过 '+Number(r.stretchTotal||16)+' 次。');return}
+  if(chiroUsed>Number(r.chiroTotal||8)){alert('Chiro 配套次数已经超过 '+Number(r.chiroTotal||8)+' 次。');return}
   if(idx==='')r.sessions.push(x);else r.sessions[Number(idx)]=x;
   saveAll();closeSessionForm();openPackageDetail(r.id);render();
 }
