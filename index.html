@@ -88,7 +88,7 @@ button{cursor:pointer}
       <button id="packageActionBtn" class="save" style="border:0;border-radius:14px;padding:13px" onclick="openPackageForm()">＋ 配套</button>
     </div>
     <div style="text-align:right;margin-top:8px">
-      <button class="smallBtn" onclick="openMoneyModal()">💰 金钱</button>
+      <button class="smallBtn" onclick="openMoneyModal(activeCustomPageId())">💰 金钱</button>
     </div>
   </div>
 
@@ -461,7 +461,7 @@ function saveSpecial(){
  if(!title||!date){alert('请填写日期和名称');return}
  const type=$('spType').value;
  const old=editingSpecial?records.find(x=>x.id===editingSpecial):null;
- const o={id:editingSpecial||('sp'+Date.now()),category:'special',customPageId:old?.customPageId||activeCustomPageId(),specialType:type,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
+ const o={id:editingSpecial||('sp'+Date.now()),category:'special',customPageId:old?.customPageId||ownerPageId,specialType:type,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingSpecial)]=o}else records.push(o);
  saveAll();closeSpecialForm();currentFilter='special';render();
 }
@@ -745,6 +745,7 @@ function openMedicalRecordForm(id=''){
 }
 function closeMedicalRecordForm(){$('medicalRecordModal').classList.remove('show')}
 function saveMedicalRecord(){
+ const ownerPageId=activeCustomPageId();
   const id=$('medicalRecordId').value||('m'+Date.now()),old=records.find(x=>x.id===id);
   const r={id,created:old?.created||Date.now(),date:$('medicalDate').value||today(),category:'medicalRecord',customPageId:activeCustomPageId(),medicalType:'看医生',title:$('medicalName').value.trim()||'看医生',amount:$('medicalAmount').value.trim(),notes:$('medicalNotes').value.trim()};
   const i=records.findIndex(x=>x.id===id);if(i>=0)records[i]=r;else records.push(r);
@@ -768,15 +769,24 @@ function amountNum(v){
  const n=parseFloat(String(v||'').replace(/[^0-9.-]/g,''));
  return isNaN(n)?0:n;
 }
-function openMoneyModal(){
- const arr=records.filter(r=>(r.category==='medicalRecord'||r.category==='package')&&amountNum(r.amount)>0)
-   .sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
+function openMoneyModal(pageId){
+ const scopeId=pageId||null;
+ const arr=records.filter(r=>{
+   if(!(r.category==='medicalRecord'||r.category==='package')||amountNum(r.amount)<=0)return false;
+   if(scopeId) return String(r.customPageId||'')===String(scopeId);
+   return !r.customPageId;
+ }).sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
+
  const total=arr.reduce((n,r)=>n+amountNum(r.amount),0);
- $('moneyList').innerHTML=arr.length?arr.map(r=>`<div style="display:flex;justify-content:space-between;gap:14px;padding:12px 2px;border-bottom:1px solid #eee2d3">
-   <div><b>${esc(r.title||'医疗')}</b><div style="font-size:12px;color:#8b7c6c;margin-top:3px">${r.category==='package'?'配套':'看医生'} · ${esc(r.date||'')}</div></div>
-   <b>${esc(r.amount)}</b>
- </div>`).join(''):'<div class="empty">还没有金额记录</div>';
- $('moneyTotal').textContent='总金额：'+total.toFixed(2);
+ $('moneyTotal').textContent=money(total);
+ $('moneyList').innerHTML=arr.length?arr.map(r=>`
+   <div class="moneyRow">
+     <div>
+       <b>${esc(r.title||'未命名')}</b>
+       <div class="meta">${esc(r.date||'')}${r.category==='package'?' · 配套':' · 看医生'}</div>
+     </div>
+     <b>${money(amountNum(r.amount))}</b>
+   </div>`).join(''):'<div class="empty">还没有金额记录</div>';
  $('moneyModal').classList.add('show');
 }
 function closeMoneyModal(){$('moneyModal').classList.remove('show')}
@@ -830,6 +840,7 @@ function openPackageForm(id=''){
 }
 function closePackageForm(){$('packageModal').classList.remove('show')}
 function savePackage(){
+ const ownerPageId=activeCustomPageId();
   const id=$('packageEditId').value||('p'+Date.now());
   const old=records.find(x=>x.id===id);
   const stretchTotal=Math.max(0,parseInt($('packageStretchTotal').value)||0); const chiroTotal=Math.max(0,parseInt($('packageChiroTotal').value)||0); const stretchLabel=$('packageStretchLabel').value.trim()||'拉腰 / 拉颈项'; const chiroLabel=$('packageChiroLabel').value.trim()||'Chiro';
