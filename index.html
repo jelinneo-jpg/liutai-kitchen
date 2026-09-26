@@ -301,8 +301,11 @@ button{cursor:pointer}
   <label style="display:block;margin:12px 0 6px">物品名称</label>
   <input id="shopTitle" style="width:100%" placeholder="例如：洗衣液">
 
-  <label style="display:block;margin:12px 0 6px">数量 / 备注</label>
-  <input id="shopNotes" style="width:100%" placeholder="例如：补充装 × 2">
+  <label style="display:block;margin:12px 0 6px">数量</label>
+  <input id="shopQty" style="width:100%" placeholder="例如：1罐、2瓶、10粒">
+
+  <label style="display:block;margin:12px 0 6px">备注</label>
+  <input id="shopNotes" style="width:100%" placeholder="例如：无糖、补充装">
 
   <label style="display:block;margin:12px 0 6px">照片</label>
   <input id="shopPhoto" type="file" accept="image/*" style="width:100%">
@@ -591,7 +594,7 @@ function deleteSpecial(id){if(confirm('确定删除这个特别日子吗？')){r
 
 function openShoppingForm(id=null){
  editingShopping=id;const r=id?records.find(x=>x.id===id):null;
- $('shopTitle').value=r?.title||'';$('shopNotes').value=r?.notes||'';
+ $('shopTitle').value=r?.title||'';$('shopQty').value=r?.qty||'';$('shopNotes').value=r?.notes||'';
  $('shopPhoto').value='';
  $('shopPhotoStatus').textContent=r?.photo?'📷 已有照片；不重新选择会保留原照片':'';
  $('shoppingModal').classList.add('show');
@@ -622,7 +625,7 @@ async function saveShopping(){
  if(file){
   try{photo=await compressShopPhoto(file)}catch(e){alert('照片读取失败，请重新选择');return}
  }
- const o={id:editingShopping||('sh'+Date.now()),category:'shopping',customPageId:old?.customPageId||activeCustomPageId(),title,notes:$('shopNotes').value.trim(),photo,done:old?.done||false,created:old?.created||Date.now()};
+ const o={id:editingShopping||('sh'+Date.now()),category:'shopping',customPageId:old?.customPageId||activeCustomPageId(),title,qty:$('shopQty').value.trim(),notes:$('shopNotes').value.trim(),photo,done:old?.done||false,created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingShopping)]=o}else records.push(o);
  saveAll();closeShoppingForm();setFilter(currentFilter,null);
 }
@@ -654,7 +657,7 @@ function shareShoppingWhatsApp(){
    <div style="display:grid;gap:8px;max-height:48vh;overflow:auto">
     ${items.map(r=>`<label style="display:flex;align-items:center;gap:10px;background:#fffaf0;border:1px solid #ead9b7;border-radius:12px;padding:11px 12px">
       <input type="checkbox" value="${r.id}" style="width:20px;height:20px;flex:0 0 auto">
-      <span><b>${esc(r.title)}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</span>
+      <span><b>${esc(r.title)}${r.qty?`&nbsp;&nbsp;${esc(r.qty)}`:''}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</span>
     </label>`).join('')}
    </div>
    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px">
@@ -673,7 +676,7 @@ function sendSelectedShoppingWhatsApp(){
  const selected=ids.map(id=>records.find(r=>r.id===id)).filter(Boolean);
  const page=currentCustomPage();
  const title=page?.name||'购物清单';
- const lines=selected.map(r=>`☐ ${r.title}${r.notes?` — ${r.notes}`:''}`);
+ const lines=selected.map(r=>`☐ ${r.title}${r.qty?`  ${r.qty}`:''}${r.notes?` — ${r.notes}`:''}`);
  const text=`🛒 ${title}\n\n${lines.join('\n')}`;
  modal.remove();
  window.location.href='https://wa.me/?text='+encodeURIComponent(text);
@@ -835,7 +838,7 @@ function render(){
   const item=r=>`<div class="card medCompact" style="${r.done?'opacity:.7':''}">
    <div style="display:flex;gap:10px;align-items:flex-start">
     <button onclick="toggleShopping('${r.id}')" style="border:0;background:transparent;font-size:22px;padding:0">${r.done?'☑️':'☐'}</button>
-    <div style="flex:1"><b>${esc(r.title)}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>
+    <div style="flex:1"><b>${esc(r.title)}${r.qty?`&nbsp;&nbsp;${esc(r.qty)}`:''}</b>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>
     ${r.photo?`<button class="smallBtn" style="padding:6px 8px" onclick="openPhotoViewer('${r.id}')">📷</button>`:''}
     ${r.done
       ? `<button class="smallBtn" style="padding:5px 9px;border-radius:10px;font-size:18px;line-height:1" onclick="deleteShopping('${r.id}')">×</button>`
