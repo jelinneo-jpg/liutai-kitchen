@@ -39,7 +39,7 @@ button{cursor:pointer}
 .reminder{margin-top:9px;background:#fff2d8;border-radius:12px;padding:8px 10px;font-size:12px;color:#86652d}
 .fab{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);width:min(688px,calc(100% - 32px));border:0;background:#4d4035;color:white;border-radius:18px;padding:15px;font-weight:800;font-size:16px;box-shadow:0 12px 28px rgba(58,45,34,.28)}
 .modal{display:none;position:fixed;inset:0;background:rgba(42,34,27,.38);z-index:20;padding:18px;overflow:auto}
-.modal.show{display:block}.sheet{max-width:680px;margin:30px auto;background:#fffaf2;border-radius:25px;padding:19px;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.modal.show{display:block}#medicalModal{z-index:20}#packageModal,#medicalRecordModal,#packageDetailModal,#sessionModal{z-index:30}.sheet{max-width:680px;margin:30px auto;background:#fffaf2;border-radius:25px;padding:19px;box-shadow:0 18px 50px rgba(0,0,0,.18)}
 .sheet h2{margin:2px 0 15px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .field{margin-bottom:11px}.field label{display:block;font-size:12px;color:#786857;margin:0 0 5px}
 .field input,.field textarea,.field select{width:100%;border:1px solid #e5d6c1;background:white;border-radius:12px;padding:11px;outline:none}
@@ -122,8 +122,8 @@ button{cursor:pointer}
       <button class="smallBtn" onclick="closeMedicalPage()">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:16px 0 9px">
-      <button class="save" style="border:0;border-radius:13px;padding:12px" onclick="openPackageForm()">＋ 添加配套</button>
       <button class="save" style="border:0;border-radius:13px;padding:12px" onclick="openMedicalRecordForm()">＋ 看医生</button>
+      <button class="save" style="border:0;border-radius:13px;padding:12px" onclick="openPackageForm()">＋ 配套</button>
     </div>
     <div class="sectionHead"><b>医疗记录</b><span id="medicalCount" class="count"></span></div>
     <div id="medicalList"></div>
@@ -146,7 +146,7 @@ button{cursor:pointer}
 
 <div id="packageModal" class="modal">
   <div class="sheet">
-    <h2 id="packageFormTitle">🏥 新增医生配套</h2>
+    <h2 id="packageFormTitle">📦 添加配套</h2>
     <input type="hidden" id="packageEditId">
     <div class="grid">
       <div class="field full"><label>配套名称</label><input id="packageName" placeholder="例如：Chiro 配套"></div>
@@ -369,7 +369,7 @@ let currentPackageId=null;
 function openPackageForm(id=''){
   $('packageEditId').value=id;
   const r=records.find(x=>x.id===id);
-  $('packageFormTitle').textContent=r?'✏️ 编辑医生配套':'🏥 新增医生配套';
+  $('packageFormTitle').textContent=r?'✏️ 编辑配套':'📦 添加配套';
   $('packageName').value=r?.title||'';
   $('packageAmount').value=r?.amount||'';
   $('packageStretchTotal').value=r?.stretchTotal||16; $('packageChiroTotal').value=r?.chiroTotal||8;
@@ -386,7 +386,7 @@ function savePackage(){
     title:$('packageName').value.trim()||'医生配套',amount:$('packageAmount').value.trim(),
     stretchTotal,chiroTotal,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
   const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r; else records.push(r);
-  saveAll();closePackageForm();render();if($('medicalModal').classList.contains('show'))renderMedical();
+  saveAll();closePackageForm();render();renderMedical();
 }
 function openPackageDetail(id){
   currentPackageId=id; const r=records.find(x=>x.id===id); if(!r)return;
