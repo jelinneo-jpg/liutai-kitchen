@@ -205,74 +205,80 @@ function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt
 function label(cat){return {package:'🏥 医生配套',doctor:'🏥 医生记录',medical:'🏥 医疗',birthday:'🎂 生日',anniversary:'❤️ 纪念日',work:'💼 工作',life:'🏠 生活',other:'📝 其他'}[cat]||'📝 其他'}
 function saveAll(){localStorage.setItem(KEY,JSON.stringify(records))}
 function setFilter(f,btn){
- currentFilter=f;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');
- const med=f==='medical'; $('medicalActions').classList.toggle('hidden',!med); $('listTitle').textContent=med?'医疗记录':'最近记录'; render();
+ currentFilter=f;
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+ btn.classList.add('active');
+ const med=f==='medical';
+ $('medicalActions').classList.toggle('hidden',!med);
+ $('listTitle').textContent=med?'医疗记录':'最近记录';
+ render();
 }
 function render(){
  const q=$('search').value.trim().toLowerCase();
- let arr=[];
- records.forEach(r=>{
-   if(r.category==='package'){
-     (r.sessions||[]).forEach((x,i)=>arr.push({id:r.id+'__session__'+i,category:'medicalSession',date:x.date||r.date,created:(r.created||0)+i,title:r.title||'医疗配套',packageName:r.title||'医疗配套',waist:!!x.waist,neck:!!x.neck,chiro:!!x.chiro,notes:x.notes||''}));
-   } else arr.push(r);
- });
+ let arr;
+
+ if(currentFilter==='medical'){
+   arr=records.filter(r=>r.category==='medicalRecord'||r.category==='package');
+ }else{
+   arr=records.filter(r=>r.category!=='medicalRecord'&&r.category!=='package'&&r.category!=='doctor');
+   if(currentFilter!=='all') arr=arr.filter(r=>r.category===currentFilter);
+ }
+
+ arr=arr.filter(r=>!q||JSON.stringify(r).toLowerCase().includes(q));
  arr.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
- arr=arr.filter(r=>(currentFilter==='medical'||currentFilter==='all'||r.category===currentFilter)&&(!q||JSON.stringify(r).toLowerCase().includes(q)));
  $('count').textContent=arr.length+' 条';
- if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';return}
+
+ if(!arr.length){
+   $('list').innerHTML=currentFilter==='medical'
+     ?'<div class="empty">还没有医疗记录<br><small>按上面的「＋看医生」或「＋配套」开始记录</small></div>'
+     :'<div class="empty">还没有记录 🌿<br><small>按下面的「新增记录」开始记录吧</small></div>';
+   return;
+ }
+
  $('list').innerHTML=arr.map(r=>{
    if(r.category==='medicalRecord'){
-     return `<div class="card"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'医疗记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}<div class="actions"><button class="smallBtn" onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button><button class="smallBtn danger" onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button></div></div>`;
-   }
-   if(r.category==='medicalSession'){
-     const done=[r.waist?'☑ 拉腰':'',r.neck?'☑ 拉颈项':'',r.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'治疗记录';
-     return `<div class="card"><div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 配套治疗</span><h3>${esc(r.packageName)}</h3></div><div class="date">${esc(r.date||'')}</div></div><div class="note">${done}</div>${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>`;
-   }
-   if(r.category==='package'){
-     const sessions=r.sessions||[];
-     const stretchTotal=Number(r.stretchTotal)||16, chiroTotal=Number(r.chiroTotal)||8;
-     const stretchUsed=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0);
-     const chiroUsed=sessions.filter(x=>x.chiro).length;
-     const stretchPct=Math.min(100,Math.round(stretchUsed/stretchTotal*100));
-     const chiroPct=Math.min(100,Math.round(chiroUsed/chiroTotal*100));
-     const latest=sessions.length?[...sessions].sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0]:null;
-     return `<div class="card" onclick="openPackageDetail('${r.id}')" style="cursor:pointer">
-       <div class="cardTop"><div><span class="badge doctor">🏥 医生配套</span><h3>${esc(r.title||'未命名配套')}</h3></div><div class="date">${stretchUsed>=stretchTotal&&chiroUsed>=chiroTotal?'✅ 已完成':'治疗配套'}</div></div>
-       <div class="meta" style="border-top:0;padding-top:2px">
-         ${r.amount?`💰 金额：${esc(r.amount)}<br>`:''}
-         ${r.clinic?`🏥 ${esc(r.clinic)}<br>`:''}
-         <div style="margin-top:8px"><b>拉腰 / 拉颈项　${stretchUsed} / ${stretchTotal}</b>
-         <div style="height:9px;background:#eee3d5;border-radius:999px;overflow:hidden;margin:6px 0 10px"><div style="height:100%;width:${stretchPct}%;background:#6e9b89"></div></div>
-         <b>Chiro　${chiroUsed} / ${chiroTotal}</b>
-         <div style="height:9px;background:#eee3d5;border-radius:999px;overflow:hidden;margin:6px 0 8px"><div style="height:100%;width:${chiroPct}%;background:#6e9b89"></div></div></div>
-         ${latest?`最近一次：${esc(latest.date)}`:''}
+     return `<div class="card">
+       <div class="cardTop"><div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'看医生')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
+       ${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}
+       ${r.notes?`<div class="meta"><b>📝 备注</b><br>${esc(r.notes)}</div>`:''}
+       <div class="actions">
+         <button class="smallBtn" onclick="editMedicalRecord('${r.id}')">✏️ 编辑</button>
+         <button class="smallBtn danger" onclick="deleteMedicalRecord('${r.id}')">🗑️ 删除</button>
        </div>
-       <div style="text-align:right;margin-top:8px;font-size:13px;color:#826d57">点开查看详情 ＞</div>
      </div>`;
    }
-   let meta='';
-   if(r.category==='doctor'){
-     const bits=[];
-     if(r.clinic) bits.push('🏥 '+esc(r.clinic));
-     if(r.doctor) bits.push('👨‍⚕️ '+esc(r.doctor));
-     if(r.department) bits.push('🩺 '+esc(r.department));
-     if(r.symptoms) bits.push('<b>症状：</b>'+esc(r.symptoms));
-     if(r.diagnosis) bits.push('<b>医生说明：</b>'+esc(r.diagnosis));
-     if(r.treatment) bits.push('<b>药物/治疗：</b>'+esc(r.treatment));
-     if(r.tests) bits.push('<b>检查：</b>'+esc(r.tests));
-     if(r.cost) bits.push('💰 '+esc(r.cost));
-     meta=bits.length?'<div class="meta">'+bits.join('<br>')+'</div>':'';
+
+   if(r.category==='package'){
+     const sessions=r.sessions||[];
+     const st=Number(r.stretchTotal)||16, ct=Number(r.chiroTotal)||8;
+     const su=sessions.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0);
+     const cu=sessions.filter(x=>x.chiro).length;
+     const complete=su>=st&&cu>=ct;
+     return `<div class="card">
+       <div class="cardTop">
+         <div><span class="badge doctor">🏥 医疗 · 配套</span><h3>${esc(r.title||'医疗配套')}</h3></div>
+         <div class="date">${complete?'✅ 已完成':'使用中'}</div>
+       </div>
+       ${r.amount?`<div class="note">💰 ${esc(r.amount)}</div>`:''}
+       <div class="meta">
+         <b>拉腰 / 拉颈项：${su} / ${st}</b><br>
+         <b>Chiro：${cu} / ${ct}</b>
+       </div>
+       <div class="actions" style="justify-content:flex-start;flex-wrap:wrap">
+         <button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 记录治疗'}</button>
+         <button class="smallBtn" onclick="togglePackageHistory('${r.id}')">治疗记录 ▼</button>
+         <button class="smallBtn" onclick="openPackageForm('${r.id}')">✏️ 编辑</button>
+         <button class="smallBtn danger" onclick="deletePackage('${r.id}')">🗑️ 删除</button>
+       </div>
+       <div id="history_${r.id}" class="hidden" style="margin-top:10px"></div>
+     </div>`;
    }
-   let rem='';
-   if(r.category==='doctor' && (r.waist||r.neck||r.chiro)){
-     const done=[r.waist?'☑ 拉腰':'',r.neck?'☑ 拉颈项':'',r.chiro?'☑ Chiro':''].filter(Boolean);
-     rem=`<div class="reminder">本次项目：${done.join('　')}</div>`;
-   }
+
    return `<div class="card">
-    <div class="cardTop"><div><span class="badge ${r.category==='doctor'?'doctor':''}">${label(r.category)}</span><h3>${esc(r.title||'未命名记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
-    ${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}${meta}${rem}
-    <div class="actions"><button class="smallBtn" onclick="editRecord('${r.id}')">✏️ 编辑</button><button class="smallBtn danger" onclick="deleteRecord('${r.id}')">🗑️ 删除</button></div>
-   </div>`
+     <div class="cardTop"><div><span class="badge">${label(r.category)}</span><h3>${esc(r.title||'未命名记录')}</h3></div><div class="date">${esc(r.date||'')}</div></div>
+     ${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}
+     <div class="actions"><button class="smallBtn" onclick="editRecord('${r.id}')">✏️ 编辑</button><button class="smallBtn danger" onclick="deleteRecord('${r.id}')">🗑️ 删除</button></div>
+   </div>`;
  }).join('');
 }
 function clearForm(){
@@ -344,6 +350,42 @@ function deletePackage(id){
     render();
   }
 }
+
+function startSession(id){
+ currentPackageId=id;
+ openSessionForm();
+}
+function togglePackageHistory(id){
+ const box=$('history_'+id);
+ if(!box)return;
+ if(!box.classList.contains('hidden')){
+   box.classList.add('hidden');
+   return;
+ }
+ const r=records.find(x=>x.id===id);
+ const sessions=r?.sessions||[];
+ box.innerHTML=sessions.length?sessions.map((x,i)=>{
+   const items=[x.waist?'☑ 拉腰':'',x.neck?'☑ 拉颈项':'',x.chiro?'☑ Chiro':''].filter(Boolean).join('　')||'未勾选项目';
+   return `<div style="padding:10px 2px;border-top:1px solid #eee2d3">
+     <div style="display:flex;justify-content:space-between;gap:10px"><b>第 ${i+1} 次</b><span class="date">${esc(x.date||'')}</span></div>
+     <div class="note">${items}</div>
+     ${x.notes?`<div class="note">${esc(x.notes)}</div>`:''}
+     <div class="actions"><button class="smallBtn" onclick="editInlineSession('${id}',${i})">✏️ 编辑</button><button class="smallBtn danger" onclick="deleteInlineSession('${id}',${i})">🗑️ 删除</button></div>
+   </div>`;
+ }).join(''):'<div style="padding:10px;color:#8b7c6c">还没有治疗记录</div>';
+ box.classList.remove('hidden');
+}
+function editInlineSession(id,i){
+ currentPackageId=id;
+ editSession(i);
+}
+function deleteInlineSession(id,i){
+ currentPackageId=id;
+ if(!confirm('确定删除这一次治疗记录吗？'))return;
+ const r=records.find(x=>x.id===id);if(!r)return;
+ r.sessions.splice(i,1);saveAll();render();
+ setTimeout(()=>togglePackageHistory(id),0);
+}
 let currentPackageId=null;
 function openPackageForm(id=''){
   $('packageEditId').value=id;
@@ -403,7 +445,7 @@ function saveSession(){
   if(stretchUsed>Number(r.stretchTotal||16)){alert('拉腰 / 拉颈项共享的配套次数已经超过 '+Number(r.stretchTotal||16)+' 次。');return}
   if(chiroUsed>Number(r.chiroTotal||8)){alert('Chiro 配套次数已经超过 '+Number(r.chiroTotal||8)+' 次。');return}
   if(idx==='')r.sessions.push(x);else r.sessions[Number(idx)]=x;
-  saveAll();closeSessionForm();openPackageDetail(r.id);render();
+  saveAll();closeSessionForm();currentFilter='medical';render();setTimeout(()=>togglePackageHistory(r.id),0);
 }
 function editSession(i){
   const r=records.find(x=>x.id===currentPackageId),x=r?.sessions?.[i];if(!x)return;
