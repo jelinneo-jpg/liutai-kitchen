@@ -748,7 +748,7 @@ function saveMedicalRecord(){
   const id=$('medicalRecordId').value||('m'+Date.now()),old=records.find(x=>x.id===id);
   const r={id,created:old?.created||Date.now(),date:$('medicalDate').value||today(),category:'medicalRecord',customPageId:activeCustomPageId(),medicalType:'看医生',title:$('medicalName').value.trim()||'看医生',amount:$('medicalAmount').value.trim(),notes:$('medicalNotes').value.trim()};
   const i=records.findIndex(x=>x.id===id);if(i>=0)records[i]=r;else records.push(r);
-  saveAll();closeMedicalRecordForm();currentFilter='medical';$('medicalActions').classList.remove('hidden');$('listTitle').textContent='医疗记录';render();
+  saveAll();closeMedicalRecordForm();setFilter(currentFilter,null);
 }
 function editMedicalRecord(id){openMedicalRecordForm(id)}
 function deleteMedicalRecord(id){if(confirm('确定删除这条医疗记录吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
@@ -842,7 +842,7 @@ function savePackage(){
     title:$('packageName').value.trim()||'医生配套',amount:$('packageAmount').value.trim(),
     stretchLabel,stretchTotal,chiroLabel,chiroTotal,clinic:$('packageClinic').value.trim(),notes:$('packageNotes').value.trim(),sessions:old?.sessions||[]};
   const i=records.findIndex(x=>x.id===id); if(i>=0)records[i]=r; else records.push(r);
-  saveAll();closePackageForm();currentFilter='medical';$('medicalActions').classList.remove('hidden');$('listTitle').textContent='医疗记录';render();
+  saveAll();closePackageForm();setFilter(currentFilter,null);
 }
 function openPackageDetail(id){
   currentPackageId=id; const r=records.find(x=>x.id===id); if(!r)return;
