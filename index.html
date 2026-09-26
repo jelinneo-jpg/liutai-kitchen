@@ -273,7 +273,10 @@ function render(){
    if(r.category==='medicalRecord'){
      return `<div class="card medCompact">
        <div class="cardTop">
-         <div><span class="badge doctor">🏥 医疗 · 看医生</span><h3>${esc(r.title||'看医生')}</h3><div class="date">${esc(r.date||'')}</div></div>
+         <div style="min-width:0">
+           <div style="display:flex;align-items:center;gap:7px;flex-wrap:wrap"><span class="badge doctor">🏥 医疗 · 看医生</span><span class="date">${esc(r.date||'')}</span></div>
+           <h3>${esc(r.title||'看医生')}</h3>
+         </div>
          <div class="moreWrap">
            <button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button>
            <div id="more_${r.id}" class="moreMenu hidden">
@@ -303,9 +306,10 @@ function render(){
            </div>
          </div>
        </div>
-       <div class="meta">
-         <b>拉腰 / 拉颈项：${su} / ${st}</b><br>
-         <b>Chiro：${cu} / ${ct}</b>
+       <div class="meta" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+         <b>拉腰 / 拉颈项：${su}/${st}</b>
+         <span style="color:#c6b39b">｜</span>
+         <b>Chiro：${cu}/${ct}</b>
        </div>
        <div class="actions" style="justify-content:flex-start;flex-wrap:wrap">
          <button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 记录治疗'}</button>
