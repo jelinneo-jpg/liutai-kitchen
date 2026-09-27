@@ -1027,12 +1027,21 @@ function render(){
     <div style="min-width:0;flex:1"><span class="date">${esc(r.date||'')}</span><h3>${esc(r.title||'记录')}</h3></div>
     ${r.category==='life'?`<div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openMemoForm('${r.id}')">✏️ 编辑</button><button onclick="if(confirm('确定删除这条记录吗？')){records=records.filter(x=>String(x.id)!=='${r.id}');saveAll();render()}">🗑️ 删除</button></div></div>`:''}
    </div>
-   ${r.content?`<div class="note" style="white-space:pre-wrap;margin-top:8px">${esc(r.content)}</div>`:''}
-   ${r.notes?`<div class="note" style="white-space:pre-wrap;margin-top:8px"><b>备注：</b>${esc(r.notes)}</div>`:''}
-   ${r.link&&safeMemoUrl(r.link)?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-      <a class="smallBtn" href="${safeMemoUrl(r.link)}" target="_blank" rel="noopener" style="text-decoration:none;padding:7px 10px">🔗 打开链接</a>
-      <button class="smallBtn" onclick="copyMemoLink('${safeMemoUrl(r.link)}')" style="padding:7px 10px">📋 复制链接</button>
-    </div>`:''}
+   ${r.privateEncrypted?(
+      unlockedPrivateMemos[String(r.id)]?
+       `<div class="note" style="margin-top:8px"><b>${esc(unlockedPrivateMemos[String(r.id)].title||'')}</b></div>
+        ${unlockedPrivateMemos[String(r.id)].content?`<div class="note" style="white-space:pre-wrap;margin-top:8px">${esc(unlockedPrivateMemos[String(r.id)].content)}</div>`:''}
+        ${unlockedPrivateMemos[String(r.id)].notes?`<div class="note" style="white-space:pre-wrap;margin-top:8px"><b>备注：</b>${esc(unlockedPrivateMemos[String(r.id)].notes)}</div>`:''}
+        ${unlockedPrivateMemos[String(r.id)].link&&safeMemoUrl(unlockedPrivateMemos[String(r.id)].link)?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><a class="smallBtn" href="${safeMemoUrl(unlockedPrivateMemos[String(r.id)].link)}" target="_blank" rel="noopener" style="text-decoration:none;padding:7px 10px">🔗 打开链接</a></div>`:''}`
+       :`<button class="smallBtn" style="margin-top:9px;padding:8px 12px" onclick="unlockPrivateMemo('${r.id}')">🔐 输入密码查看</button>`
+     ):`
+       ${r.content?`<div class="note" style="white-space:pre-wrap;margin-top:8px">${esc(r.content)}</div>`:''}
+       ${r.notes?`<div class="note" style="white-space:pre-wrap;margin-top:8px"><b>备注：</b>${esc(r.notes)}</div>`:''}
+       ${r.link&&safeMemoUrl(r.link)?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
+          <a class="smallBtn" href="${safeMemoUrl(r.link)}" target="_blank" rel="noopener" style="text-decoration:none;padding:7px 10px">🔗 打开链接</a>
+          <button class="smallBtn" onclick="copyMemoLink('${safeMemoUrl(r.link)}')" style="padding:7px 10px">📋 复制链接</button>
+        </div>`:''}
+     `}
   </div>`;
  }).join('');
 }
@@ -1294,37 +1303,98 @@ function deleteSession(i){
 render();
 
 
+
+const MEMO_CRYPTO_ITER=210000;
+function bytesToB64(bytes){let x='';bytes.forEach(b=>x+=String.fromCharCode(b));return btoa(x)}
+function b64ToBytes(x){const b=atob(x),a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a}
+async function memoKey(password,salt,usage){
+ const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(password),'PBKDF2',false,['deriveKey']);
+ return crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:MEMO_CRYPTO_ITER,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,usage);
+}
+async function encryptMemoData(data,password){
+ const salt=crypto.getRandomValues(new Uint8Array(16)),iv=crypto.getRandomValues(new Uint8Array(12));
+ const key=await memoKey(password,salt,['encrypt']);
+ const enc=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(JSON.stringify(data)));
+ return {v:1,salt:bytesToB64(salt),iv:bytesToB64(iv),data:bytesToB64(new Uint8Array(enc))};
+}
+async function decryptMemoData(box,password){
+ const key=await memoKey(password,b64ToBytes(box.salt),['decrypt']);
+ const dec=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64ToBytes(box.iv)},key,b64ToBytes(box.data));
+ return JSON.parse(new TextDecoder().decode(dec));
+}
+const unlockedPrivateMemos={};
+async function unlockPrivateMemo(id){
+ const r=records.find(x=>String(x.id)===String(id));if(!r?.privateEncrypted)return;
+ const password=prompt('请输入这条保密记录的密码');
+ if(!password)return;
+ try{
+   unlockedPrivateMemos[String(id)]=await decryptMemoData(r.privateEncrypted,password);
+   render();
+ }catch(e){alert('密码不正确，无法查看');}
+}
+
 let editingMemoId=null;
-function openMemoForm(id=null){
+async function openMemoForm(id=null){
  editingMemoId=id;
  const r=id?records.find(x=>String(x.id)===String(id)):null;
+ let d=r;
+ if(r?.privateEncrypted){
+   d=unlockedPrivateMemos[String(r.id)];
+   if(!d){
+     const password=prompt('请输入这条保密记录的密码');
+     if(!password){editingMemoId=null;return}
+     try{d=await decryptMemoData(r.privateEncrypted,password);unlockedPrivateMemos[String(r.id)]=d}
+     catch(e){alert('密码不正确，无法编辑');editingMemoId=null;return}
+   }
+ }
  $('memoDate').value=r?.date||today();
- $('memoName').value=r?.title||'';
- $('memoContent').value=r?.content||'';
- $('memoLink').value=r?.link||'';
- $('memoNotes').value=r?.notes||'';
+ $('memoName').value=d?.title||'';
+ $('memoContent').value=d?.content||'';
+ $('memoLink').value=d?.link||'';
+ $('memoNotes').value=d?.notes||'';
+ $('memoPrivate').checked=!!r?.privateEncrypted;
  $('memoModal').classList.add('show');
 }
 function closeMemoForm(){
  $('memoModal').classList.remove('show');
  editingMemoId=null;
 }
-function saveMemo(){
+async function saveMemo(){
  const name=$('memoName').value.trim();
  if(!name){alert('请填写名称');return}
  const old=editingMemoId?records.find(x=>String(x.id)===String(editingMemoId)):null;
+ const privateOn=$('memoPrivate').checked;
+ const secret={
+   title:name,
+   content:$('memoContent').value.trim(),
+   link:$('memoLink').value.trim(),
+   notes:$('memoNotes').value.trim()
+ };
+ let encrypted=null;
+ if(privateOn){
+   let password=prompt(old?.privateEncrypted?'请输入密码以重新加密保存':'请为这条保密记录设置密码');
+   if(!password)return;
+   if(!old?.privateEncrypted){
+     const confirmPw=prompt('请再输入一次密码');
+     if(password!==confirmPw){alert('两次密码不一致');return}
+   }
+   try{encrypted=await encryptMemoData(secret,password)}
+   catch(e){alert('这个浏览器无法进行加密保存');return}
+ }
  const obj={
   id:old?.id||Date.now(),
   category:'life',
   customPageId:old?.customPageId||activeCustomPageId(),
   date:$('memoDate').value||today(),
-  title:name,
-  content:$('memoContent').value.trim(),
-  link:$('memoLink').value.trim(),
-  notes:$('memoNotes').value.trim(),
+  title:privateOn?'🔒 保密记录':name,
+  content:privateOn?'':secret.content,
+  link:privateOn?'':secret.link,
+  notes:privateOn?'':secret.notes,
+  privateEncrypted:privateOn?encrypted:null,
   created:old?.created||Date.now()
  };
  if(old) records[records.indexOf(old)]=obj; else records.push(obj);
+ if(privateOn) delete unlockedPrivateMemos[String(obj.id)];
  saveAll();
  closeMemoForm();
  const activeTab=[...document.querySelectorAll('.tab')].find(b=>b.getAttribute('onclick')?.includes(`setFilter('${currentFilter}'`));
@@ -1378,6 +1448,10 @@ setFilter('life',initialLifeBtn||null);
   <div class="field"><label>内容</label><textarea id="memoContent" placeholder="请输入内容"></textarea></div>
   <div class="field"><label>链接（选填）</label><input id="memoLink" type="url" inputmode="url" placeholder="https://..."></div>
   <div class="field"><label>备注（选填）</label><textarea id="memoNotes" placeholder="请输入备注"></textarea></div>
+  <div class="field" style="display:flex;align-items:center;gap:10px">
+    <input id="memoPrivate" type="checkbox" style="width:auto;margin:0">
+    <label for="memoPrivate" style="margin:0">🔒 保密记录（加密保存）</label>
+  </div>
   <div class="row">
    <button class="cancel" onclick="closeMemoForm()">取消</button>
    <button class="save" onclick="saveMemo()">保存</button>
