@@ -1576,10 +1576,8 @@ if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')
 
 // Initialize the visible page through setFilter so each page's action buttons
 // (including 复制页面) are shown correctly.
-const initialShoppingBtn=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('data-filter')==='shopping');
+const initialShoppingBtn=[...document.querySelectorAll('.tab')].find(x=>(x.getAttribute('onclick')||'').includes("setFilter('shopping'"));
 setFilter('shopping',initialShoppingBtn||null);
-document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-if(initialShoppingBtn) initialShoppingBtn.classList.add('active');
 
 setTimeout(fitRecordsScrollArea,0);
 
