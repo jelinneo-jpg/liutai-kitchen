@@ -166,6 +166,7 @@ button{cursor:pointer}
 </div>
 
   <div id="builtinCopyActions" style="margin:8px 0 12px;display:flex;align-items:center;width:100%;position:relative">
+    <button id="specialAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openSpecialForm()">＋ 新增</button>
     <button id="builtinCopyBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentPage()">📄 复制页面</button>
     <button id="shoppingAddTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="openShoppingForm()">＋ 添加</button>
     <button id="medicalCopyDeleteTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
@@ -187,9 +188,7 @@ button{cursor:pointer}
     <button class="smallBtn" style="padding:8px 12px;border-radius:12px" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
   </div>
 
-  <div id="specialActions" class="hidden" style="margin:10px 0 14px">
-    <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openSpecialForm()">＋ 新增</button>
-  </div>
+  <div id="specialActions" class="hidden"></div>
 
   <div id="shoppingActions" class="hidden" style="margin:10px 0 14px">
     <button class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700" onclick="openShoppingForm()">＋ 添加</button>
@@ -504,6 +503,8 @@ function setFilter(f,btn){
  if($('packageActionBtn')) $('packageActionBtn').textContent=(custom&&layout==='medical'?(cp.packageButtonName||'＋ 配套'):'＋ 配套');
   const builtinCopy=['life','medical','special','shopping'].includes(f)||memoCustom||(custom&&layout==='medical')||(custom&&layout==='checklist');
   if($('builtinCopyActions')) $('builtinCopyActions').style.display=builtinCopy?'block':'none';
+  const specialAddInline=$('specialAddInline');
+  if(specialAddInline) specialAddInline.style.display=(currentFilter==='special')?'inline-block':'none';
   const builtinCopyBtn=$('builtinCopyBtn');
   if(builtinCopyBtn){
     builtinCopyBtn.style.marginLeft=(currentFilter==='special')?'auto':'0';
