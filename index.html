@@ -938,12 +938,15 @@ function render(){
    return `<div class="specialCalendarCard">
     <div class="specialDateBox"><div class="day">${dp.day}</div><div class="mon">${dp.mon}</div></div>
     <div class="specialCardBody">
-      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-        <div class="specialCardTitle" style="min-width:0;margin-bottom:0">${esc(r.title)} ${r.specialType==='birthday'?'🎂':'💕'}</div>
-        <button class="smallBtn" style="flex:0 0 auto;padding:5px 8px" onclick="addSpecialToCalendar('${r.id}')">📅 加入日历</button>
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div style="min-width:0">
+          <div class="specialCardTitle">${esc(r.title)} ${r.specialType==='birthday'?'🎂':'💕'}</div>
+          <div class="specialCountdown">${days===0?'就是今天 🎉':`还有 ${days} 天`}</div>
+        </div>
       </div>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-        <div class="specialCountdown">${days===0?'就是今天 🎉':`还有 ${days} 天`}</div>
+      ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
+      <div class="specialCardActions" style="display:flex;align-items:center;justify-content:space-between">
+        <button class="smallBtn" onclick="addSpecialToCalendar('${r.id}')">📅 加入日历</button>
         <div class="moreWrap">
           <button class="moreBtn" onclick="toggleMore(event,'special_more_${r.id}')">⋯</button>
           <div id="special_more_${r.id}" class="moreMenu hidden">
@@ -952,7 +955,6 @@ function render(){
           </div>
         </div>
       </div>
-      ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
     </div>
    </div>`;
   }
