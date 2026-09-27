@@ -167,29 +167,6 @@ button{cursor:pointer}
   #shoppingModal .sheet{margin-top:95px}
 }
 
-
-/* V126 Shopping: upper information stays completely still; only the data list scrolls */
-body.shoppingUpperLocked{overflow:hidden}
-body.shoppingUpperLocked .wrap{
-  height:100dvh;
-  overflow:hidden;
-  padding-bottom:18px;
-  display:flex;
-  flex-direction:column;
-}
-body.shoppingUpperLocked #list{
-  flex:1 1 auto;
-  min-height:0;
-  overflow-y:auto;
-  -webkit-overflow-scrolling:touch;
-  padding-bottom:110px;
-}
-body.shoppingUpperLocked #shoppingActions,
-body.shoppingUpperLocked #builtinCopyActions,
-body.shoppingUpperLocked .sectionHead{
-  flex:0 0 auto;
-}
-
 </style>
 </head>
 <body>
@@ -535,7 +512,6 @@ function syncShoppingSectionMascot(f,cp,layout){
  if(title)title.innerHTML=`<img class="sectionMascot" src="${src}">${name}`;
 }
 function setFilter(f,btn){
-  document.body.classList.toggle('shoppingUpperLocked', f==='shopping');
  currentFilter=f;
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  if(btn)btn.classList.add('active');
