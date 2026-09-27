@@ -168,6 +168,7 @@ button{cursor:pointer}
   <div id="builtinCopyActions" style="margin:8px 0 12px;display:flex;align-items:center;width:100%;position:relative">
     <button id="specialAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openSpecialForm()">＋ 新增</button>
     <button id="builtinCopyBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px" onclick="copyCurrentPage()">📄 复制页面</button>
+    <button id="specialDeletePageInline" class="smallBtn danger" style="padding:9px 12px;border-radius:12px;display:none" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
     <button id="shoppingAddTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="openShoppingForm()">＋ 添加</button>
     <button id="medicalCopyDeleteTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
     <button id="medicalMoneyTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;display:none;position:absolute;right:0;top:0" onclick="openMoneyModal(activeCustomPageId())">💰 金钱</button>
@@ -501,15 +502,17 @@ function setFilter(f,btn){
  const memoCustom=custom&&layout==='memo';
  if($('doctorActionBtn')) $('doctorActionBtn').textContent=(custom&&layout==='medical'?(cp.doctorButtonName||'＋ 新增'):'＋ 新增');
  if($('packageActionBtn')) $('packageActionBtn').textContent=(custom&&layout==='medical'?(cp.packageButtonName||'＋ 配套'):'＋ 配套');
-  const builtinCopy=['life','medical','special','shopping'].includes(f)||memoCustom||(custom&&layout==='medical')||(custom&&layout==='checklist');
+  const builtinCopy=['life','medical','special','shopping'].includes(f)||memoCustom||(custom&&layout==='medical')||(custom&&layout==='checklist')||(custom&&layout==='special');
   if($('builtinCopyActions')) $('builtinCopyActions').style.display=builtinCopy?'block':'none';
   const specialAddInline=$('specialAddInline');
-  if(specialAddInline) specialAddInline.style.display=(currentFilter==='special')?'inline-block':'none';
+  if(specialAddInline) specialAddInline.style.display=special?'inline-block':'none';
+  const specialDeletePageInline=$('specialDeletePageInline');
+  if(specialDeletePageInline) specialDeletePageInline.style.display=(custom&&layout==='special')?'inline-block':'none';
   const builtinCopyBtn=$('builtinCopyBtn');
   if(builtinCopyBtn){
-    builtinCopyBtn.style.marginLeft=(currentFilter==='special')?'auto':'0';
+    builtinCopyBtn.style.marginLeft=special?'auto':'0';
     const row=$('builtinCopyActions');
-    if(row && builtinCopy && currentFilter==='special') row.style.display='flex';
+    if(row && builtinCopy && special) row.style.display='flex';
   }
 
  const ma=$('medicalActions'), sa=$('specialActions'), sha=$('shoppingActions'),
@@ -518,7 +521,7 @@ function setFilter(f,btn){
  if(sa){sa.classList.toggle('hidden',!special);sa.style.display=special?'block':'none';}
  if(sha){sha.classList.add('hidden');sha.style.display='none';}
  if(ca){ca.classList.toggle('hidden',!normalCustom);ca.style.display=normalCustom?'flex':'none';}
- if(da){const showDelete=custom&&layout!=='normal'&&layout!=='memo'&&layout!=='medical'&&layout!=='checklist';da.classList.toggle('hidden',!showDelete);da.style.display=showDelete?'block':'none';}
+ if(da){const showDelete=custom&&layout!=='normal'&&layout!=='memo'&&layout!=='medical'&&layout!=='checklist'&&layout!=='special';da.classList.toggle('hidden',!showDelete);da.style.display=showDelete?'block':'none';}
 
  if($('genericAddBtn')) $('genericAddBtn').style.display=(f==='life')?'':'none';
 
@@ -588,7 +591,26 @@ function renderCustomTabs(){
 
  syncCustomMedicalMascot();
  syncCustomShoppingMascot();
+ syncCustomSpecialMascot();
  applyPageOrder();
+}
+
+function syncCustomSpecialMascot(){
+ const main=[...document.querySelectorAll('.tabs .tab')].find(x=>x.getAttribute('onclick')?.includes("setFilter('special'"));
+ const src=main?.querySelector('.tabMascot')?.src;
+ if(!src)return;
+ customPages.filter(p=>p.layout==='special').forEach(p=>{
+  const tab=[...document.querySelectorAll('#customTabs .tab')].find(x=>x.getAttribute('onclick')?.includes(`custom:${p.id}`));
+  if(!tab)return;
+  let img=tab.querySelector('.tabMascot');
+  if(!img){
+   img=document.createElement('img');
+   img.className='tabMascot';
+   tab.prepend(img);
+  }
+  img.src=src;
+  [...tab.childNodes].filter(n=>n.nodeType===3).forEach(n=>{ if(n.textContent.includes('✨')) n.textContent=n.textContent.replace('✨',''); });
+ });
 }
 
 function toggleMedicalButtonNameFields(){
