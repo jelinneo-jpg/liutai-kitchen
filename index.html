@@ -168,38 +168,26 @@ button{cursor:pointer}
 }
 
 
-/* V125: Shopping page fixed area through the second "购物清单" heading */
-.shoppingWhiteAdd{background:#fff !important}
-
-body.shoppingFixed .header{
-  position:sticky;
-  top:0;
-  z-index:100;
-  background:#f9e7c3;
-  margin-top:0;
-  padding-top:8px;
+/* V126 Shopping: upper information stays completely still; only the data list scrolls */
+body.shoppingUpperLocked{overflow:hidden}
+body.shoppingUpperLocked .wrap{
+  height:100dvh;
+  overflow:hidden;
+  padding-bottom:18px;
+  display:flex;
+  flex-direction:column;
 }
-body.shoppingFixed .tabs{
-  position:sticky;
-  top:82px;
-  z-index:99;
-  background:#f9e7c3;
-  padding-top:5px;
+body.shoppingUpperLocked #list{
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  padding-bottom:110px;
 }
-body.shoppingFixed #builtinCopyActions{
-  position:sticky;
-  top:132px;
-  z-index:98;
-  background:#f9e7c3;
-  padding:7px 0;
-}
-body.shoppingFixed .sectionHead{
-  position:sticky;
-  top:184px;
-  z-index:97;
-  background:#f9e7c3;
-  padding:7px 0;
-  margin-top:0;
+body.shoppingUpperLocked #shoppingActions,
+body.shoppingUpperLocked #builtinCopyActions,
+body.shoppingUpperLocked .sectionHead{
+  flex:0 0 auto;
 }
 
 </style>
@@ -223,7 +211,7 @@ body.shoppingFixed .sectionHead{
   <div id="builtinCopyActions" style="margin:8px 0 12px;display:flex;align-items:center;width:100%;position:relative;gap:8px">
     <button id="specialAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openSpecialForm()">＋ 新增</button>
     <button id="memoAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openMemoForm()">＋ 新增</button>
-    <button id="shoppingAddInline" class="smallBtn shoppingWhiteAdd" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openShoppingForm()">＋ 新增</button>
+    <button id="shoppingAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openShoppingForm()">＋ 新增</button>
     <div id="pageSearchWrap" style="display:none;flex:1;min-width:0;margin-left:2px">
       <input id="pageSearch" class="search" placeholder="🔍 搜索……" oninput="render()" style="margin:0;width:100%;padding:9px 11px">
     </div>
@@ -547,7 +535,7 @@ function syncShoppingSectionMascot(f,cp,layout){
  if(title)title.innerHTML=`<img class="sectionMascot" src="${src}">${name}`;
 }
 function setFilter(f,btn){
-  document.body.classList.toggle('shoppingFixed', f==='shopping');
+  document.body.classList.toggle('shoppingUpperLocked', f==='shopping');
  currentFilter=f;
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  if(btn)btn.classList.add('active');
