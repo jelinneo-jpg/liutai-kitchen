@@ -127,6 +127,15 @@ button{cursor:pointer}
   height:52px;
   line-height:1.2;
 }
+#memoModal input[type="checkbox"]{
+  display:inline-block;
+  width:22px;
+  height:22px;
+  padding:0;
+  border-radius:4px;
+  -webkit-appearance:checkbox;
+  appearance:auto;
+}
 #memoModal textarea{
   min-height:92px;
   resize:vertical;
@@ -1334,6 +1343,10 @@ async function unlockPrivateMemo(id){
 }
 
 let editingMemoId=null;
+function updateMemoPrivateStatus(){
+ const cb=$('memoPrivate'), st=$('memoPrivateStatus');
+ if(st) st.textContent=cb?.checked?'— 已开启':'';
+}
 async function openMemoForm(id=null){
  editingMemoId=id;
  const r=id?records.find(x=>String(x.id)===String(id)):null;
@@ -1353,6 +1366,7 @@ async function openMemoForm(id=null){
  $('memoLink').value=d?.link||'';
  $('memoNotes').value=d?.notes||'';
  $('memoPrivate').checked=!!r?.privateEncrypted;
+ updateMemoPrivateStatus();
  $('memoModal').classList.add('show');
 }
 function closeMemoForm(){
@@ -1449,8 +1463,8 @@ setFilter('life',initialLifeBtn||null);
   <div class="field"><label>链接（选填）</label><input id="memoLink" type="url" inputmode="url" placeholder="https://..."></div>
   <div class="field"><label>备注（选填）</label><textarea id="memoNotes" placeholder="请输入备注"></textarea></div>
   <div class="field" style="display:flex;align-items:center;gap:10px">
-    <input id="memoPrivate" type="checkbox" style="width:auto;margin:0">
-    <label for="memoPrivate" style="margin:0">🔒 保密记录（加密保存）</label>
+    <input id="memoPrivate" type="checkbox" onchange="updateMemoPrivateStatus()" style="width:22px;height:22px;min-width:22px;margin:0;-webkit-appearance:checkbox;appearance:auto;accent-color:#584536">
+    <label for="memoPrivate" style="margin:0;flex:1">🔒 保密记录（加密保存） <span id="memoPrivateStatus" style="font-weight:700;color:#8a735e"></span></label>
   </div>
   <div class="row">
    <button class="cancel" onclick="closeMemoForm()">取消</button>
