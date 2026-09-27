@@ -169,14 +169,21 @@ button{cursor:pointer}
   z-index:1000;
   box-sizing:border-box;
   padding:calc(env(safe-area-inset-top) + 10px) 16px 8px;
-  background:linear-gradient(160deg,#fffaf0,#fae9c8);
+  background:linear-gradient(160deg,#fffaf0,#f7e1b8);
 }
 #fixedTopArea .header{margin:0 2px 14px}
 #fixedTopArea .tabs{margin:0;padding-bottom:5px}\n#fixedTopArea .sectionHead{margin:8px 3px 0}
-#builtinCopyActions{margin-top:214px !important}
+#builtinCopyActions{margin:8px 0 0 !important}
 @supports(padding:max(0px)){
-  #builtinCopyActions{margin-top:calc(194px + env(safe-area-inset-top)) !important}
+  #builtinCopyActions{margin:8px 0 0 !important}
 }
+
+
+#fixedActionSlot{min-height:48px}
+#fixedTopArea + #medicalActions{margin-top:0}
+#fixedTopArea{padding-bottom:10px}
+/* scrolling content begins below the fixed area, through the 新增 row */
+#medicalActions,#shoppingActions,#specialActions,#genericActions{scroll-margin-top:250px}
 
 </style>
 </head>
@@ -197,6 +204,7 @@ button{cursor:pointer}
     <span id="customTabs"></span>
 </div>
   <div id="fixedSectionHeadSlot"></div>
+  <div id="fixedActionSlot"></div>
   </div>
 
   <div id="builtinCopyActions" style="margin:8px 0 12px;display:flex;align-items:center;width:100%;position:relative;gap:8px">
@@ -214,6 +222,7 @@ button{cursor:pointer}
     <button id="memoAddBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="openMemoForm()">＋ 新增</button>
     <button id="memoDeleteTopBtn" class="smallBtn" style="padding:9px 14px;border-radius:12px;margin-left:8px;display:none" onclick="deleteCurrentCustomPage()">🗑️ 删除页面</button>
   </div>
+  <div id="fixedTopSpacer" style="height:245px"></div>
 
   <div id="medicalActions" class="hidden" style="display:none;margin:10px 0 14px">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1482,6 +1491,8 @@ async function copyMemoLink(raw){
 renderCustomTabs();
 const fixedSectionHeadSlot=$('fixedSectionHeadSlot'), mainSectionHead=$('mainSectionHead');
 if(fixedSectionHeadSlot&&mainSectionHead) fixedSectionHeadSlot.appendChild(mainSectionHead);
+const fixedActionSlot=$('fixedActionSlot'), fixedActions=$('builtinCopyActions');
+if(fixedActionSlot&&fixedActions) fixedActionSlot.appendChild(fixedActions);
 
 if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')?'':'none';
 
