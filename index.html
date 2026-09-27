@@ -21,9 +21,34 @@ button{cursor:pointer}
 .doctorBtn{border:0;background:var(--doctor);color:#365f50;padding:11px 14px;border-radius:14px;font-weight:700;white-space:nowrap}
 .search{width:100%;border:1px solid var(--line);background:#fff;border-radius:15px;padding:12px 14px;outline:none;margin:2px 0 12px}
 .tabs{display:flex;gap:8px;overflow:auto;padding-bottom:5px;margin-bottom:10px}
-/* V112: top area stays in place while the records below scroll */
-.hero{position:sticky;top:0;z-index:40}
-.tabs{position:sticky;top:104px;z-index:39;background:var(--bg);padding-top:6px}
+/* V113: title/gear and page tabs are truly fixed; only content below scrolls */
+.hero{
+  position:fixed;
+  top:0;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(100%,760px);
+  z-index:100;
+  margin:0;
+  border-radius:0 0 22px 22px;
+  padding-top:max(14px,env(safe-area-inset-top));
+}
+.tabs{
+  position:fixed;
+  top:112px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(100%,760px);
+  z-index:99;
+  background:var(--bg);
+  padding:8px 20px 7px;
+  margin:0;
+}
+#builtinCopyActions{margin-top:176px !important}
+@media(max-width:600px){
+  .tabs{top:112px}
+  #builtinCopyActions{margin-top:176px !important}
+}
 .tab{border:1px solid var(--line);background:#fffaf1;padding:8px 13px;border-radius:999px;color:#725f4c;white-space:nowrap}
 .tab.active{background:#5b4b3d;color:white;border-color:#5b4b3d}
 .sectionHead{display:flex;justify-content:space-between;align-items:center;margin:14px 3px 9px}
