@@ -842,7 +842,10 @@ function deleteCustomRecord(id){if(confirm('确定删除这条记录吗？')){re
 function addSpecialToCalendar(id){
  const r=records.find(x=>x.id===id); if(!r||!r.date)return;
  const d=r.date.replaceAll('-','');
- const next=new Date(Number(r.date.slice(0,4)),Number(r.date.slice(5,7))-1,Number(r.date.slice(8,10))+1);
+ // Parse as local calendar numbers. Do NOT pass an 8-digit YYYYMMDD string to Date(),
+ // because Safari can interpret it as a year-sized value and create a year-long event.
+ const yy=Number(r.date.slice(0,4)), mm=Number(r.date.slice(5,7)), dd=Number(r.date.slice(8,10));
+ const next=new Date(yy,mm-1,dd+1);
  const end=`${next.getFullYear()}${String(next.getMonth()+1).padStart(2,'0')}${String(next.getDate()).padStart(2,'0')}`;
  const kind=r.specialType==='birthday'?'生日':'纪念日';
  const title=`${kind} - ${r.title}`;
@@ -854,10 +857,12 @@ function addSpecialToCalendar(id){
   'DTSTAMP:'+new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,''),
   'DTSTART;VALUE=DATE:'+d,
   'DTEND;VALUE=DATE:'+end,
-  'RRULE:FREQ=YEARLY',
+  'RRULE:FREQ=YEARLY;INTERVAL=1',
   'SUMMARY:'+title.replace(/([,;\\])/g,'\\$1'),
   ...(desc?['DESCRIPTION:'+desc.replace(/\n/g,'\\n').replace(/([,;\\])/g,'\\$1')]:[]),
-  'END:VEVENT','END:VCALENDAR'
+  'TRANSP:TRANSPARENT',
+  'STATUS:CONFIRMED',
+  'END:VEVENT','END:VCALENDAR',''
  ].join('\r\n');
  const blob=new Blob([ics],{type:'text/calendar;charset=utf-8'});
  const url=URL.createObjectURL(blob);
