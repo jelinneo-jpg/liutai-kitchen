@@ -538,12 +538,13 @@ function setFilter(f,btn){
  if($('memoAddInline')) $('memoAddInline').style.display=(f==='life'||memoCustom)?'inline-block':'none';
  if($('memoDeleteTopBtn')) $('memoDeleteTopBtn').style.display=memoCustom?'inline-block':'none';
  if($('medicalMoneyTopBtn')){
-   const moneyBtn=$('medicalMoneyTopBtn'), row=$('builtinCopyActions'), copyBtn=$('builtinCopyBtn');
+   const moneyBtn=$('medicalMoneyTopBtn'), row=$('builtinCopyActions');
    moneyBtn.style.display=med?'inline-block':'none';
    moneyBtn.style.position='static';
-   if(row && copyBtn && moneyBtn.parentElement!==row) row.insertBefore(moneyBtn,copyBtn);
+   if(row && moneyBtn.parentElement!==row) row.insertBefore(moneyBtn,row.firstChild);
+   else if(row && med && row.firstElementChild!==moneyBtn) row.insertBefore(moneyBtn,row.firstChild);
  }
- if($('medicalCopyDeleteTopBtn')) $('medicalCopyDeleteTopBtn').style.display=(custom&&(layout==='medical'||layout==='checklist'))?'inline-block':'none';
+ if($('medicalCopyDeleteTopBtn')) $('medicalCopyDeleteTopBtn').style.display='none';
  if($('shoppingAddTopBtn')) $('shoppingAddTopBtn').style.display='none';
  if($('shoppingAddInline')) $('shoppingAddInline').style.display=shopping?'inline-block':'none';
  syncMedicalCopySectionMascot(cp,layout);
