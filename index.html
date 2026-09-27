@@ -443,6 +443,22 @@ function syncMedicalCopySectionMascot(cp,layout){
  if(title) title.innerHTML=`<img class="sectionMascot" src="${src}">${esc(cp.name)}`;
 }
 
+function syncSpecialSectionMascot(f,cp,layout){
+ const isSpecial=f==='special'||(cp&&layout==='special');
+ if(!isSpecial)return;
+ let tab;
+ if(cp){
+   tab=[...document.querySelectorAll('#customTabs .tab')].find(x=>x.getAttribute('onclick')?.includes(`custom:${cp.id}`));
+ }else{
+   tab=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('onclick')?.includes("setFilter('special'"));
+ }
+ const src=tab?.querySelector('.tabMascot')?.src;
+ if(!src)return;
+ const title=$('listTitle');
+ const name=cp?esc(cp.name):'特别日子';
+ if(title)title.innerHTML=`<img class="sectionMascot" src="${src}">${name}`;
+}
+
 function syncShoppingSectionMascot(f,cp,layout){
  const isShopping=f==='shopping'||(cp&&layout==='checklist');
  if(!isShopping)return;
@@ -500,6 +516,7 @@ function setFilter(f,btn){
  if($('medicalCopyDeleteTopBtn')) $('medicalCopyDeleteTopBtn').style.display=(custom&&(layout==='medical'||layout==='checklist'))?'inline-block':'none';
  if($('shoppingAddTopBtn')) $('shoppingAddTopBtn').style.display=shopping?'inline-block':'none';
  syncMedicalCopySectionMascot(cp,layout);
+ syncSpecialSectionMascot(f,cp,layout);
  syncShoppingSectionMascot(f,cp,layout);
  render();
 }
