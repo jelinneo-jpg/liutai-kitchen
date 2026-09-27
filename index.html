@@ -260,6 +260,13 @@ body.recordsOnlyScroll #list{
   min-width: max-content !important;
 }
 
+
+/* 修正自定义页面按钮被挤在 customTabs 容器里：
+   让每个副本按钮直接成为横向 tabs 的项目 */
+#customTabs{display:contents}
+.tabs{flex-wrap:nowrap !important;overflow-x:auto !important;overflow-y:hidden !important;-webkit-overflow-scrolling:touch}
+.tabs .tab{flex:0 0 auto !important;width:auto !important;min-width:max-content !important}
+
 </style>
 </head>
 <body>
