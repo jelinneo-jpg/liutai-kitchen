@@ -167,6 +167,20 @@ button{cursor:pointer}
   #shoppingModal .sheet{margin-top:95px}
 }
 
+
+/* Same movement rule on every main page:
+   upper controls stay in place; only the records below the second page title scroll. */
+html.recordsOnlyScroll, body.recordsOnlyScroll{
+  height:100%;
+  overflow:hidden;
+}
+body.recordsOnlyScroll #list{
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  padding-bottom:110px;
+}
+
 </style>
 </head>
 <body>
@@ -511,8 +525,22 @@ function syncShoppingSectionMascot(f,cp,layout){
  const name=cp?esc(cp.name):'购物清单';
  if(title)title.innerHTML=`<img class="sectionMascot" src="${src}">${name}`;
 }
+
+function fitRecordsScrollArea(){
+  const list=document.getElementById('list');
+  if(!list)return;
+  document.documentElement.classList.add('recordsOnlyScroll');
+  document.body.classList.add('recordsOnlyScroll');
+  const top=list.getBoundingClientRect().top;
+  const h=Math.max(120, window.innerHeight-top);
+  list.style.height=h+'px';
+  list.style.maxHeight=h+'px';
+}
+window.addEventListener('resize',()=>requestAnimationFrame(fitRecordsScrollArea));
+
 function setFilter(f,btn){
  currentFilter=f;
+ setTimeout(fitRecordsScrollArea,0);
  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
  if(btn)btn.classList.add('active');
 
@@ -1473,6 +1501,8 @@ if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')
 // (including 复制页面) are shown correctly.
 const initialLifeBtn=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('data-filter')==='life');
 setFilter('life',initialLifeBtn||null);
+
+setTimeout(fitRecordsScrollArea,0);
 </script>
 
 <div id="memoModal" class="modal">
