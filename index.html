@@ -942,9 +942,8 @@ function render(){
         <div class="specialCardTitle" style="min-width:0;margin-bottom:0">${esc(r.title)} ${r.specialType==='birthday'?'🎂':'💕'}</div>
         <button class="smallBtn" style="flex:0 0 auto;padding:5px 8px" onclick="addSpecialToCalendar('${r.id}')">📅 加入日历</button>
       </div>
-      <div class="specialCountdown">${days===0?'就是今天 🎉':`还有 ${days} 天`}</div>
-      ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
-      <div class="specialCardActions" style="display:flex;align-items:center;justify-content:flex-end">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+        <div class="specialCountdown">${days===0?'就是今天 🎉':`还有 ${days} 天`}</div>
         <div class="moreWrap">
           <button class="moreBtn" onclick="toggleMore(event,'special_more_${r.id}')">⋯</button>
           <div id="special_more_${r.id}" class="moreMenu hidden">
@@ -953,6 +952,7 @@ function render(){
           </div>
         </div>
       </div>
+      ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
     </div>
    </div>`;
   }
