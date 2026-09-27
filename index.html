@@ -21,6 +21,9 @@ button{cursor:pointer}
 .doctorBtn{border:0;background:var(--doctor);color:#365f50;padding:11px 14px;border-radius:14px;font-weight:700;white-space:nowrap}
 .search{width:100%;border:1px solid var(--line);background:#fff;border-radius:15px;padding:12px 14px;outline:none;margin:2px 0 12px}
 .tabs{display:flex;gap:8px;overflow:auto;padding-bottom:5px;margin-bottom:10px}
+/* V112: top area stays in place while the records below scroll */
+.hero{position:sticky;top:0;z-index:40}
+.tabs{position:sticky;top:104px;z-index:39;background:var(--bg);padding-top:6px}
 .tab{border:1px solid var(--line);background:#fffaf1;padding:8px 13px;border-radius:999px;color:#725f4c;white-space:nowrap}
 .tab.active{background:#5b4b3d;color:white;border-color:#5b4b3d}
 .sectionHead{display:flex;justify-content:space-between;align-items:center;margin:14px 3px 9px}
@@ -1458,10 +1461,12 @@ renderCustomTabs();
 
 if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')?'':'none';
 
-// Initialize the visible page through setFilter so each page's action buttons
-// (including 复制页面) are shown correctly.
-const initialLifeBtn=[...document.querySelectorAll('.tab')].find(x=>x.getAttribute('data-filter')==='life');
-setFilter('life',initialLifeBtn||null);
+// On every fresh open, show the first page in the current page order.
+applyPageOrder();
+const firstKey=currentPageOrder()[0]||'life';
+const firstBtn=pageTabs().find(x=>pageOrderKey(x)===firstKey);
+setFilter(firstKey,firstBtn||null);
+if(firstBtn) firstBtn.scrollIntoView({block:'nearest',inline:'start'});
 </script>
 
 <div id="memoModal" class="modal">
