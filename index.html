@@ -274,7 +274,7 @@ button{cursor:pointer}
 <div id="specialModal" class="modal">
  <div class="sheet" style="max-width:520px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
-    <h2 style="margin:0">✨ 添加特别日子</h2>
+    <h2 style="margin:0;display:flex;align-items:center;gap:8px"><img id="specialFormMascot" class="sectionMascot" alt="">添加特别日子</h2>
     <button class="smallBtn" onclick="closeSpecialForm()">✕</button>
   </div>
 
@@ -626,6 +626,9 @@ function openSpecialForm(id=null){
  $('spTitle').value=r?.title||'';
  $('spType').value=r?.specialType||'birthday';
  $('spNotes').value=r?.notes||'';
+ const specialTab=[...document.querySelectorAll('.tabs .tab')].find(b=>b.getAttribute('onclick')?.includes("setFilter('special'"));
+ const src=specialTab?.querySelector('.tabMascot')?.src;
+ if(src)$('specialFormMascot').src=src;
  $('specialModal').classList.add('show');
 }
 function closeSpecialForm(){$('specialModal').classList.remove('show')}
@@ -634,9 +637,9 @@ function saveSpecial(){
  if(!title||!date){alert('请填写日期和名称');return}
  const type=$('spType').value;
  const old=editingSpecial?records.find(x=>x.id===editingSpecial):null;
- const o={id:editingSpecial||('sp'+Date.now()),category:'special',customPageId:old?.customPageId||ownerPageId,specialType:type,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
+ const o={id:editingSpecial||('sp'+Date.now()),category:'special',customPageId:old?.customPageId||activeCustomPageId(),specialType:type,date,title,notes:$('spNotes').value.trim(),created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingSpecial)]=o}else records.push(o);
- saveAll();closeSpecialForm();setFilter(currentFilter,null);
+ saveAll();closeSpecialForm();render();
 }
 
 function deleteSpecial(id){if(confirm('确定删除这个特别日子吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
