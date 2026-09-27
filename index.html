@@ -919,7 +919,11 @@ function render(){
   return;
  }
 
- arr.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
+ if(arr.length && arr.every(r=>r.category==='special')){
+   arr.sort((a,b)=>specialDaysUntil(a.date)-specialDaysUntil(b.date)||(a.date||'').localeCompare(b.date||''));
+ }else{
+   arr.sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.created||0)-(a.created||0));
+ }
  $('count').textContent=arr.length+' 条';
  if(!arr.length){$('list').innerHTML='<div class="empty">还没有记录 🌿</div>';return}
 
@@ -941,10 +945,15 @@ function render(){
         </div>
       </div>
       ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
-      <div class="specialCardActions">
+      <div class="specialCardActions" style="display:flex;align-items:center;justify-content:space-between">
         <button class="smallBtn" onclick="addSpecialToCalendar('${r.id}')">📅 加入日历</button>
-        <button class="smallBtn" onclick="openSpecialForm('${r.id}')">✏️ 编辑</button>
-        <button class="specialDeleteBtn" onclick="deleteSpecial('${r.id}')">🗑️</button>
+        <div class="moreWrap">
+          <button class="moreBtn" onclick="toggleMore(event,'special_more_${r.id}')">⋯</button>
+          <div id="special_more_${r.id}" class="moreMenu hidden">
+            <button onclick="openSpecialForm('${r.id}')">✏️ 编辑</button>
+            <button onclick="deleteSpecial('${r.id}')">🗑️ 删除</button>
+          </div>
+        </div>
       </div>
     </div>
    </div>`;
