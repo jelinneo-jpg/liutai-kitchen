@@ -1255,7 +1255,7 @@ function moneyNumber(v){const n=parseFloat(String(v||'').replace(/[^0-9.-]/g,'')
 
 function openMedicalRecordForm(id=''){
   const r=records.find(x=>x.id===id);
-  $('medicalRecordId').value=id;$('medicalRecordTitle').textContent=r?'✏️ 编辑医疗记录':'＋ 新增';
+  $('medicalRecordId').value=id;setMedicalRecordHeading(r?'✏️ 编辑医疗记录':'新增');
   $('medicalDate').value=r?.date||today();$('medicalName').value=r?.title||'';$('medicalAmount').value=r?.amount||'';$('medicalNotes').value=r?.notes||'';
   $('medicalRecordModal').classList.add('show');
 }
