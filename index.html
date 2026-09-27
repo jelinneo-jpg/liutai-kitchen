@@ -47,6 +47,18 @@ button{cursor:pointer}
 .full{grid-column:1/-1}.modalBtns{display:flex;gap:9px;margin-top:8px}.modalBtns button{flex:1;border:0;border-radius:13px;padding:12px;font-weight:700}.save{background:#544538;color:white}.cancel{background:#eee3d4;color:#655647}
 .settingsRow{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:10px}
 .settingsRow button{border:0;background:#f2e5d2;padding:11px;border-radius:12px}
+
+.specialCalendarCard{display:flex;gap:13px;align-items:stretch;padding:13px;margin-bottom:10px;border-radius:18px;background:#fffaf4;box-shadow:0 7px 20px #0000000c}
+.specialDateBox{width:72px;min-width:72px;border-radius:15px;background:#fff0f0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:9px 5px;line-height:1}
+.specialDateBox .day{font-size:28px;font-weight:800;color:#5b4436}
+.specialDateBox .mon{font-size:13px;font-weight:800;color:#8a6d5b;margin-top:7px;letter-spacing:.5px}
+.specialCardBody{flex:1;min-width:0}
+.specialCardTitle{font-size:17px;font-weight:800;margin:1px 0 5px}
+.specialCountdown{font-size:15px;font-weight:700;color:#a65f55;margin:4px 0}
+.specialCardActions{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:9px}
+.specialCardActions .smallBtn{padding:6px 9px;font-size:13px}
+.specialDeleteBtn{border:0;background:#f4eadc;border-radius:10px;padding:6px 9px}
+
 .hidden{display:none!important}
 @media(max-width:560px){.grid{grid-template-columns:1fr}.heroTop{align-items:flex-start}.doctorBtn{padding:10px 11px}.sheet{margin:5px auto}.wrap{padding-top:13px}}
 
@@ -853,6 +865,20 @@ function addSpecialToCalendar(id){
  document.body.appendChild(a);a.click();a.remove();
  setTimeout(()=>URL.revokeObjectURL(url),2000);
 }
+
+function specialDateParts(dateStr){
+ const d=new Date((dateStr||'')+'T00:00:00');
+ if(isNaN(d))return {day:'--',mon:'---'};
+ return {day:String(d.getDate()),mon:['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][d.getMonth()]};
+}
+function specialDaysUntil(dateStr){
+ const d=new Date((dateStr||'')+'T00:00:00');if(isNaN(d))return '';
+ const now=new Date();now.setHours(0,0,0,0);
+ let next=new Date(now.getFullYear(),d.getMonth(),d.getDate());
+ if(next<now)next.setFullYear(next.getFullYear()+1);
+ return Math.round((next-now)/86400000);
+}
+
 function render(){
  const q=$('search').value.trim().toLowerCase();
  let arr=[];
@@ -895,20 +921,26 @@ function render(){
    const ss=r.sessions||[],st=(r.stretchTotal??16),ct=(r.chiroTotal??8),sl=r.stretchLabel||'拉腰 / 拉颈项',cl=r.chiroLabel||'Chiro',su=ss.reduce((n,x)=>n+(x.waist?1:0)+(x.neck?1:0)+(x.stretch&&!x.waist&&!x.neck?1:0),0),cu=ss.filter(x=>x.chiro).length,complete=(st<=0||su>=st)&&(ct<=0||cu>=ct);
    return `<div class="card medCompact"><div class="cardTop"><div><span class="badge doctor">配套</span><h3>${esc(r.title||'医疗配套')}</h3><div class="date">${complete?'✅ 已完成':'使用中'}</div></div><div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openPackageForm('${r.id}')">✏️ 编辑</button><button onclick="deletePackage('${r.id}')">🗑️ 删除</button></div></div></div><div class="meta" style="display:flex;gap:10px;flex-wrap:wrap">${st>0?`<b>${esc(sl)}：${su}/${st}</b>`:""}${st>0&&ct>0?`<span>｜</span>`:""}${ct>0?`<b>${esc(cl)}：${cu}/${ct}</b>`:""}</div><div class="actions"><button class="smallBtn" onclick="startSession('${r.id}')" ${complete?'disabled':''}>${complete?'✅ 已完成':'＋ 使用一次'}</button><button class="smallBtn" onclick="togglePackageHistory('${r.id}')">使用记录 ▼</button></div><div id="history_${r.id}" class="hidden" style="margin-top:10px"></div></div>`;
   }
-  if(r.category==='special')return `<div class="card medCompact">
-   <div class="cardTop">
-    <div style="min-width:0;flex:1">
-     <div class="date" style="margin-bottom:7px">${esc(r.date)}</div>
-     <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
-      <span class="badge">${r.specialType==='birthday'?'🎂 生日':'💕 纪念日'}</span>
-      <h3 style="margin:0">${esc(r.title)}</h3>
-     </div>
+  if(r.category==='special'){
+   const dp=specialDateParts(r.date),days=specialDaysUntil(r.date);
+   return `<div class="specialCalendarCard">
+    <div class="specialDateBox"><div class="day">${dp.day}</div><div class="mon">${dp.mon}</div></div>
+    <div class="specialCardBody">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div style="min-width:0">
+          <div class="specialCardTitle">${esc(r.title)} ${r.specialType==='birthday'?'🎂':'💕'}</div>
+          <div class="specialCountdown">${days===0?'就是今天 🎉':`还有 ${days} 天`}</div>
+        </div>
+      </div>
+      ${r.notes?`<div class="note" style="margin-top:5px">${esc(r.notes)}</div>`:''}
+      <div class="specialCardActions">
+        <button class="smallBtn" onclick="addSpecialToCalendar('${r.id}')">📅 加入日历</button>
+        <button class="smallBtn" onclick="openSpecialForm('${r.id}')">✏️ 编辑</button>
+        <button class="specialDeleteBtn" onclick="deleteSpecial('${r.id}')">🗑️</button>
+      </div>
     </div>
-    <div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openSpecialForm('${r.id}')">✏️ 编辑</button><button onclick="deleteSpecial('${r.id}')">🗑️ 删除</button></div></div>
-   </div>
-   ${r.notes?`<div class="note" style="margin-top:9px">${esc(r.notes)}</div>`:''}
-   <div style="margin-top:10px"><button class="smallBtn" style="padding:7px 11px;font-size:14px" onclick="addSpecialToCalendar('${r.id}')">📅 加入日历</button></div>
-  </div>`;
+   </div>`;
+  }
   if(r.category==='custom')return `<div class="card medCompact"><div class="cardTop"><div><span class="date">${esc(r.date||'')}</span>${r.recordCategory?`<span class="badge" style="margin-left:7px">${esc(r.recordCategory)}</span>`:''}<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
           <h3 style="margin-right:auto">${esc(r.title)}</h3>
           ${r.category==='life'?`<button class="dots" onclick="memoMenu('${r.id}')">•••</button>`:''}
