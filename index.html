@@ -312,6 +312,7 @@ button[onclick*="deletePage"]{
     <button id="specialAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openSpecialForm()">＋ 新增</button>
     <button id="memoAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openMemoForm()">＋ 新增</button>
     <button id="shoppingAddInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="openShoppingForm()">＋ 新增</button>
+    <button id="shoppingKitchenInline" class="smallBtn" style="padding:9px 16px;border-radius:12px;font-weight:700;display:none" onclick="generateShoppingFromKitchen()">🍳 从刘太厨房生成</button>
     <div id="pageSearchWrap" style="display:none;flex:1;min-width:0;margin-left:2px">
       <input id="pageSearch" class="search" placeholder="🔍 搜索……" oninput="render()" style="margin:0;width:100%;padding:9px 11px">
     </div>
@@ -714,6 +715,7 @@ function setFilter(f,btn){
  if($('medicalCopyDeleteTopBtn')) $('medicalCopyDeleteTopBtn').style.display='none';
  if($('shoppingAddTopBtn')) $('shoppingAddTopBtn').style.display='none';
  if($('shoppingAddInline')) $('shoppingAddInline').style.display=shopping?'inline-block':'none';
+ if($('shoppingKitchenInline')) $('shoppingKitchenInline').style.display=shopping?'inline-block':'none';
  syncMedicalCopySectionMascot(cp,layout);
  syncSpecialSectionMascot(f,cp,layout);
  syncShoppingSectionMascot(f,cp,layout);
@@ -842,6 +844,65 @@ function saveSpecial(){
 }
 
 function deleteSpecial(id){if(confirm('确定删除这个特别日子吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
+
+const KITCHEN_TODAY_KEY='liutai_kitchen_today_orders_v1';
+const KITCHEN_RECIPES_KEY='liutai_kitchen_recipes_v1';
+function readKitchenBridge(key){
+ try{
+  const v=JSON.parse(localStorage.getItem(key)||'null');
+  return Array.isArray(v?.data)?v.data:[];
+ }catch(e){return []}
+}
+function kitchenNorm(s=''){return String(s).trim().toLowerCase().replace(/\s+/g,'')}
+function kitchenIngredientNames(recipe){
+ let raw=recipe?.ingredients;
+ if(typeof raw==='string'){
+  try{raw=JSON.parse(raw)}catch(e){raw=raw.split(/[\n,，、]/).map(x=>x.trim()).filter(Boolean)}
+ }
+ if(!Array.isArray(raw))return [];
+ return raw.map(x=>{
+  if(typeof x==='string')return x.trim();
+  return String(x?.name||x?.ingredient||x?.ingredient_name||'').trim();
+ }).filter(Boolean);
+}
+function generateShoppingFromKitchen(){
+ const orders=readKitchenBridge(KITCHEN_TODAY_KEY);
+ const recipes=readKitchenBridge(KITCHEN_RECIPES_KEY);
+ if(!orders.length){
+  alert('刘太厨房还没有今天的菜单资料。\n\n请先打开一次「刘太厨房」，让今日菜单读取完成，再回来按这个按钮。');
+  return;
+ }
+ if(!recipes.length){
+  alert('还没有读取到刘太厨房的食谱资料。\n\n请先打开一次「刘太厨房」，让食谱读取完成，再回来按这个按钮。');
+  return;
+ }
+ const recipeMap=new Map(recipes.map(x=>[kitchenNorm(x?.name||x?.recipe_name),x]));
+ const names=[];
+ const missing=[];
+ orders.forEach(o=>{
+  const dish=String(o?.recipe_name||o?.food_name||o?.name||'').trim();
+  const recipe=recipeMap.get(kitchenNorm(dish));
+  if(!recipe){if(dish)missing.push(dish);return}
+  names.push(...kitchenIngredientNames(recipe));
+ });
+ const unique=[]; const seen=new Set();
+ names.forEach(name=>{const n=kitchenNorm(name);if(n&&!seen.has(n)){seen.add(n);unique.push(name)}});
+ if(!unique.length){
+  alert(missing.length?'今天的菜暂时找不到可加入的食材。\n\n没有对应食谱：'+[...new Set(missing)].join('、'):'今天的食谱没有可加入的食材。');
+  return;
+ }
+ const existing=new Set(records.filter(r=>r.category==='shopping'&&!r.customPageId).map(r=>kitchenNorm(r.title)));
+ let added=0;
+ unique.forEach(name=>{
+  const n=kitchenNorm(name); if(existing.has(n))return;
+  records.push({id:'shk'+Date.now()+Math.random().toString(36).slice(2,7),category:'shopping',customPageId:null,title:name,qty:'',notes:'',photo:'',done:false,created:Date.now()});
+  existing.add(n); added++;
+ });
+ saveAll(); render();
+ let msg=added?`已从刘太厨房加入 ${added} 样食材 🛒`:'这些食材已经在购物清单里了 😊';
+ if(missing.length)msg+='\n\n没有对应食谱：'+[...new Set(missing)].join('、');
+ alert(msg);
+}
 
 function openShoppingForm(id=null){
  editingShopping=id;const r=id?records.find(x=>x.id===id):null;
