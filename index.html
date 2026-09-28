@@ -1713,6 +1713,156 @@ if($('genericAddBtn')) $('genericAddBtn').style.display=(currentFilter==='life')
 
 // Initialize the visible page through setFilter so each page's action buttons
 // (including 复制页面) are shown correctly.
+
+/* =====================================================
+   家庭库存（本机资料，不改 Supabase）
+===================================================== */
+const HOME_STOCK_KEY='liutai_recordbook_home_stock_v1';
+let homeStockEditId=null, homeStockBuyId=null;
+
+function getHomeStock(){
+ try{const v=JSON.parse(localStorage.getItem(HOME_STOCK_KEY)||'[]');return Array.isArray(v)?v:[]}
+ catch(e){return []}
+}
+function saveHomeStock(v){localStorage.setItem(HOME_STOCK_KEY,JSON.stringify(v))}
+function stockNum(v){const n=Number(v);return Number.isFinite(n)?n:0}
+
+function ensureHomeStockUI(){
+ const tabs=document.querySelector('.tabs');
+ if(tabs&&!document.getElementById('homeStockTab')){
+   const b=document.createElement('button');
+   b.id='homeStockTab'; b.className='tab'; b.dataset.filter='homeStock';
+   b.innerHTML='<span style="font-size:25px;line-height:1">📦</span>家庭库存';
+   b.onclick=()=>setFilter('homeStock',b);
+   tabs.appendChild(b);
+ }
+ if(!document.getElementById('homeStockModal')){
+   document.body.insertAdjacentHTML('beforeend',`
+   <div id="homeStockModal" class="modal"><div class="sheet">
+    <h2 style="margin-top:0">📦 <span id="homeStockModalTitle">新增库存</span></h2>
+    <div class="grid">
+     <div class="field full"><label>物品名称</label><input id="homeStockName" placeholder="例如：米、厕纸、洗衣液"></div>
+     <div class="field"><label>现有数量</label><input id="homeStockQty" inputmode="decimal" placeholder="例如：5"></div>
+     <div class="field"><label>单位</label><input id="homeStockUnit" placeholder="例如：kg、卷、瓶、包"></div>
+     <div class="field full"><label>快用完提醒数量（可不填）</label><input id="homeStockLow" inputmode="decimal" placeholder="例如：2"></div>
+    </div>
+    <div class="modalBtns"><button class="cancel" onclick="closeHomeStockForm()">取消</button><button class="save" onclick="saveHomeStockForm()">保存</button></div>
+   </div></div>
+   <div id="homeStockBuyModal" class="modal"><div class="sheet">
+    <h2 style="margin-top:0">🛒 购买 <span id="homeStockBuyName"></span></h2>
+    <div class="grid">
+     <div class="field"><label>购买数量</label><input id="homeStockBuyQty" inputmode="decimal" placeholder="例如：12"></div>
+     <div class="field"><label>单位</label><input id="homeStockBuyUnit" placeholder="例如：卷、瓶、kg"></div>
+    </div>
+    <div class="modalBtns"><button class="cancel" onclick="closeHomeStockBuy()">取消</button><button class="save" onclick="confirmHomeStockBuy()">加入购物清单</button></div>
+   </div></div>`);
+ }
+}
+
+function openHomeStockForm(id=null){
+ homeStockEditId=id;
+ const x=id?getHomeStock().find(v=>v.id===id):null;
+ $('homeStockModalTitle').textContent=id?'编辑库存':'新增库存';
+ $('homeStockName').value=x?.name||'';
+ $('homeStockQty').value=x?.qty??'';
+ $('homeStockUnit').value=x?.unit||'';
+ $('homeStockLow').value=x?.low??'';
+ $('homeStockModal').classList.add('show');
+}
+function closeHomeStockForm(){$('homeStockModal').classList.remove('show')}
+function saveHomeStockForm(){
+ const name=$('homeStockName').value.trim(),unit=$('homeStockUnit').value.trim();
+ const qty=stockNum($('homeStockQty').value), lowRaw=$('homeStockLow').value.trim();
+ if(!name){alert('请填写物品名称');return}
+ if(!unit){alert('请填写单位');return}
+ let a=getHomeStock();
+ const old=homeStockEditId?a.find(x=>x.id===homeStockEditId):null;
+ const o={id:homeStockEditId||('hs'+Date.now()),name,qty,unit,low:lowRaw===''?null:stockNum(lowRaw),created:old?.created||Date.now()};
+ if(old)a[a.findIndex(x=>x.id===homeStockEditId)]=o;else a.push(o);
+ saveHomeStock(a);closeHomeStockForm();renderHomeStock();
+}
+function changeHomeStock(id,delta){
+ const a=getHomeStock(),x=a.find(v=>v.id===id);if(!x)return;
+ x.qty=Math.max(0,Math.round((stockNum(x.qty)+delta)*1000)/1000);
+ saveHomeStock(a);renderHomeStock();
+}
+function deleteHomeStock(id){
+ if(!confirm('确定删除这个库存物品吗？'))return;
+ saveHomeStock(getHomeStock().filter(x=>x.id!==id));renderHomeStock();
+}
+function openHomeStockBuy(id){
+ const x=getHomeStock().find(v=>v.id===id);if(!x)return;
+ homeStockBuyId=id;$('homeStockBuyName').textContent=x.name;
+ $('homeStockBuyQty').value='';$('homeStockBuyUnit').value=x.unit||'';
+ $('homeStockBuyModal').classList.add('show');
+}
+function closeHomeStockBuy(){$('homeStockBuyModal').classList.remove('show')}
+function confirmHomeStockBuy(){
+ const x=getHomeStock().find(v=>v.id===homeStockBuyId);if(!x)return;
+ const qty=$('homeStockBuyQty').value.trim(),unit=$('homeStockBuyUnit').value.trim();
+ if(!qty||stockNum(qty)<=0){alert('请填写购买数量');return}
+ const label=`${qty}${unit?(' '+unit):''}`;
+ const norm=s=>String(s||'').trim().toLowerCase().replace(/\s+/g,'');
+ let existing=records.find(r=>r.category==='shopping'&&!r.customPageId&&!r.done&&norm(r.title)===norm(x.name));
+ if(existing){
+   existing.qty=label;
+ }else{
+   records.push({id:'shop'+Date.now()+Math.random().toString(36).slice(2,6),category:'shopping',customPageId:null,title:x.name,qty:label,notes:'',photo:'',done:false,source:'homeStock',created:Date.now()});
+ }
+ saveAll();closeHomeStockBuy();
+ const btn=[...document.querySelectorAll('.tab')].find(b=>(b.getAttribute('onclick')||'').includes("setFilter('shopping'"));
+ setFilter('shopping',btn||null);
+}
+
+function renderHomeStock(){
+ if(currentFilter!=='homeStock')return;
+ const a=getHomeStock().slice().sort((x,y)=>stockNum(x.qty)-stockNum(y.qty)||(x.name||'').localeCompare(y.name||''));
+ $('count').textContent=a.length+' 项';
+ $('listTitle').innerHTML='📦 家庭库存';
+ const active=a.filter(x=>stockNum(x.qty)>0), empty=a.filter(x=>stockNum(x.qty)<=0);
+ const card=x=>{
+   const low=x.low!==null&&x.low!==undefined&&stockNum(x.qty)>0&&stockNum(x.qty)<=stockNum(x.low);
+   return `<div class="card medCompact">
+    <div style="display:flex;align-items:center;gap:10px">
+     <div style="font-size:27px">📦</div>
+     <div style="flex:1;min-width:0"><b>${esc(x.name)}</b>
+      <div class="note" style="margin-top:4px">剩余：<b>${esc(String(x.qty))} ${esc(x.unit)}</b>${low?'<span style="margin-left:8px;color:#b36b35;font-weight:700">⚠️ 快用完</span>':''}</div>
+     </div>
+     <button class="smallBtn" onclick="changeHomeStock('${x.id}',-1)">－用了</button>
+     <button class="smallBtn" onclick="changeHomeStock('${x.id}',1)">＋补货</button>
+     <div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'hs_${x.id}')">⋯</button><div id="hs_${x.id}" class="moreMenu hidden"><button onclick="openHomeStockForm('${x.id}')">✏️ 编辑</button><button onclick="deleteHomeStock('${x.id}')">🗑️ 删除</button></div></div>
+    </div></div>`;
+ };
+ const emptyCard=x=>`<div class="card medCompact" style="opacity:.86">
+   <div style="display:flex;align-items:center;gap:10px">
+    <div style="font-size:27px">📦</div>
+    <div style="flex:1"><b>${esc(x.name)}</b><div class="note">剩余：0 ${esc(x.unit)} · 已用完</div></div>
+    <button class="smallBtn" onclick="openHomeStockBuy('${x.id}')">🛒 购买</button>
+    <button class="smallBtn" onclick="changeHomeStock('${x.id}',1)">＋补货</button>
+    <div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'hs_${x.id}')">⋯</button><div id="hs_${x.id}" class="moreMenu hidden"><button onclick="openHomeStockForm('${x.id}')">✏️ 编辑</button><button onclick="deleteHomeStock('${x.id}')">🗑️ 删除</button></div></div>
+   </div></div>`;
+ $('list').innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="smallBtn" style="padding:9px 14px;border-radius:12px;font-weight:700" onclick="openHomeStockForm()">＋ 新增库存</button></div>
+ <h3 style="margin:0 0 9px">家里现有 <span class="count">${active.length}</span></h3>${active.map(card).join('')||'<div class="note">还没有库存物品</div>'}
+ <h3 style="margin:22px 0 9px">已用完 <span class="count">${empty.length}</span></h3>${empty.map(emptyCard).join('')||'<div class="note">还没有已用完物品</div>'}`;
+}
+
+const _recordbookSetFilter=setFilter;
+setFilter=function(f,btn){
+ if(f!=='homeStock')return _recordbookSetFilter(f,btn);
+ currentFilter=f; setTimeout(fitRecordsScrollArea,0);
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));if(btn)btn.classList.add('active');
+ if($('pageSearchWrap'))$('pageSearchWrap').style.display='none';
+ ['medicalActions','specialActions','shoppingActions','customActions','builtinCopyActions'].forEach(id=>{if($(id))$(id).style.display='none'});
+ if($('memoAddInline'))$('memoAddInline').style.display='none';
+ if($('shoppingAddInline'))$('shoppingAddInline').style.display='none';
+ if($('shoppingKitchenInline'))$('shoppingKitchenInline').style.display='none';
+ renderHomeStock();
+}
+const _recordbookRender=render;
+render=function(){if(currentFilter==='homeStock')return renderHomeStock();return _recordbookRender()}
+
+ensureHomeStockUI();
+
 const initialShoppingBtn=[...document.querySelectorAll('.tab')].find(x=>(x.getAttribute('onclick')||'').includes("setFilter('shopping'"));
 setFilter('shopping',initialShoppingBtn||null);
 
