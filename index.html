@@ -867,7 +867,15 @@ function kitchenPantryMap(){
  return map;
 }
 function kitchenHasAtHome(name){
- return kitchenPantryMap().has(kitchenNorm(name));
+ const n=kitchenNorm(name);
+ if(kitchenPantryMap().has(n))return true;
+ try{
+  const stock=JSON.parse(localStorage.getItem('liutai_recordbook_home_stock_v1')||'[]');
+  return Array.isArray(stock)&&stock.some(x=>
+   kitchenNorm(x?.name||'')===n &&
+   Number(x?.qty)>0
+  );
+ }catch(e){return false}
 }
 
 function readKitchenBridge(key){
