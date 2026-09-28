@@ -1750,6 +1750,7 @@ function ensureHomeStockUI(){
     <h2 style="margin-top:0">📦 <span id="homeStockModalTitle">新增库存</span></h2>
     <div class="grid">
      <div class="field full"><label>物品名称</label><input id="homeStockName" placeholder="例如：米、厕纸、洗衣液"></div>
+     <div class="field full"><label>分类</label><select id="homeStockCategory"><option>🍚 粮食 / 调味</option><option>🧻 纸品</option><option>🧴 清洁用品</option><option>🛁 洗护用品</option><option>🏠 其他</option></select></div>
      <div class="field"><label>现有数量</label><input id="homeStockQty" inputmode="decimal" placeholder="例如：5"></div>
      <div class="field"><label>单位</label><input id="homeStockUnit" placeholder="例如：kg、卷、瓶、包"></div>
      <div class="field full"><label>快用完提醒数量（可不填）</label><input id="homeStockLow" inputmode="decimal" placeholder="例如：2"></div>
@@ -1772,6 +1773,7 @@ function openHomeStockForm(id=null){
  const x=id?getHomeStock().find(v=>v.id===id):null;
  $('homeStockModalTitle').textContent=id?'编辑库存':'新增库存';
  $('homeStockName').value=x?.name||'';
+ $('homeStockCategory').value=x?.category||'🏠 其他';
  $('homeStockQty').value=x?.qty??'';
  $('homeStockUnit').value=x?.unit||'';
  $('homeStockLow').value=x?.low??'';
@@ -1780,12 +1782,13 @@ function openHomeStockForm(id=null){
 function closeHomeStockForm(){$('homeStockModal').classList.remove('show')}
 function saveHomeStockForm(){
  const name=$('homeStockName').value.trim(),unit=$('homeStockUnit').value.trim();
+ const category=$('homeStockCategory').value||'🏠 其他';
  const qty=stockNum($('homeStockQty').value), lowRaw=$('homeStockLow').value.trim();
  if(!name){alert('请填写物品名称');return}
  if(!unit){alert('请填写单位');return}
  let a=getHomeStock();
  const old=homeStockEditId?a.find(x=>x.id===homeStockEditId):null;
- const o={id:homeStockEditId||('hs'+Date.now()),name,qty,unit,low:lowRaw===''?null:stockNum(lowRaw),created:old?.created||Date.now()};
+ const o={id:homeStockEditId||('hs'+Date.now()),name,category,qty,unit,low:lowRaw===''?null:stockNum(lowRaw),created:old?.created||Date.now()};
  if(old)a[a.findIndex(x=>x.id===homeStockEditId)]=o;else a.push(o);
  saveHomeStock(a);closeHomeStockForm();renderHomeStock();
 }
@@ -1824,17 +1827,21 @@ function confirmHomeStockBuy(){
 
 function renderHomeStock(){
  if(currentFilter!=='homeStock')return;
- const a=getHomeStock().slice().sort((x,y)=>stockNum(x.qty)-stockNum(y.qty)||(x.name||'').localeCompare(y.name||''));
+ const a=getHomeStock().slice();
  $('count').textContent=a.length+' 项';
  $('listTitle').innerHTML='📦 家庭库存';
- const active=a.filter(x=>stockNum(x.qty)>0), empty=a.filter(x=>stockNum(x.qty)<=0);
+
+ const low=a.filter(x=>stockNum(x.qty)>0&&x.low!==null&&x.low!==undefined&&stockNum(x.qty)<=stockNum(x.low));
+ const empty=a.filter(x=>stockNum(x.qty)<=0);
+ const normal=a.filter(x=>stockNum(x.qty)>0&&!low.includes(x));
+
  const card=x=>{
-   const low=x.low!==null&&x.low!==undefined&&stockNum(x.qty)>0&&stockNum(x.qty)<=stockNum(x.low);
+   const isLow=low.includes(x);
    return `<div class="card medCompact">
     <div style="display:flex;align-items:center;gap:10px">
      <div style="font-size:27px">📦</div>
      <div style="flex:1;min-width:0"><b>${esc(x.name)}</b>
-      <div class="note" style="margin-top:4px">剩余：<b>${esc(String(x.qty))} ${esc(x.unit)}</b>${low?'<span style="margin-left:8px;color:#b36b35;font-weight:700">⚠️ 快用完</span>':''}</div>
+      <div class="note" style="margin-top:4px">剩余：<b>${esc(String(x.qty))} ${esc(x.unit)}</b>${isLow?'<span style="margin-left:8px;color:#b36b35;font-weight:700">⚠️ 快用完</span>':''}</div>
      </div>
      <button class="smallBtn" onclick="changeHomeStock('${x.id}',-1)">－用了</button>
      <button class="smallBtn" onclick="changeHomeStock('${x.id}',1)">＋补货</button>
@@ -1849,11 +1856,27 @@ function renderHomeStock(){
     <button class="smallBtn" onclick="changeHomeStock('${x.id}',1)">＋补货</button>
     <div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'hs_${x.id}')">⋯</button><div id="hs_${x.id}" class="moreMenu hidden"><button onclick="openHomeStockForm('${x.id}')">✏️ 编辑</button><button onclick="deleteHomeStock('${x.id}')">🗑️ 删除</button></div></div>
    </div></div>`;
- $('list').innerHTML=`<div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="smallBtn" style="padding:9px 14px;border-radius:12px;font-weight:700" onclick="openHomeStockForm()">＋ 新增库存</button></div>
- <h3 style="margin:0 0 9px">家里现有 <span class="count">${active.length}</span></h3>${active.map(card).join('')||'<div class="note">还没有库存物品</div>'}
- <h3 style="margin:22px 0 9px">已用完 <span class="count">${empty.length}</span></h3>${empty.map(emptyCard).join('')||'<div class="note">还没有已用完物品</div>'}`;
-}
 
+ const cats=['🍚 粮食 / 调味','🧻 纸品','🧴 清洁用品','🛁 洗护用品','🏠 其他'];
+ const groups=cats.map(cat=>{
+   const items=normal.filter(x=>(x.category||'🏠 其他')===cat);
+   if(!items.length)return '';
+   const id='stockcat_'+cats.indexOf(cat);
+   return `<div class="card" style="padding:0;overflow:hidden;margin-bottom:10px">
+    <button type="button" onclick="document.getElementById('${id}').classList.toggle('hidden')" style="width:100%;border:0;background:transparent;padding:15px 16px;display:flex;align-items:center;justify-content:space-between;font-weight:800;font-size:15px;color:inherit;text-align:left">
+      <span>${cat}</span><span style="font-size:12px;font-weight:600;opacity:.65">${items.length} 项　›</span>
+    </button>
+    <div id="${id}" class="hidden" style="padding:0 10px 10px">${items.map(card).join('')}</div>
+   </div>`;
+ }).join('');
+
+ $('list').innerHTML=`
+ <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="smallBtn" style="padding:9px 14px;border-radius:12px;font-weight:700" onclick="openHomeStockForm()">＋ 新增库存</button></div>
+ ${low.length?`<h3 style="margin:0 0 9px">⚠️ 快用完 <span class="count">${low.length}</span></h3>${low.map(card).join('')}`:''}
+ ${empty.length?`<h3 style="margin:22px 0 9px">🛒 已用完 <span class="count">${empty.length}</span></h3>${empty.map(emptyCard).join('')}`:''}
+ <h3 style="margin:22px 0 9px">📦 其他库存 <span class="count">${normal.length}</span></h3>
+ ${groups||'<div class="note">暂时没有其他库存</div>'}`;
+}
 const _recordbookSetFilter=setFilter;
 setFilter=function(f,btn){
  if(f!=='homeStock')return _recordbookSetFilter(f,btn);
