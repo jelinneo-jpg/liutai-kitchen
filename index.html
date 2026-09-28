@@ -1770,33 +1770,39 @@ function selectMedicalCalendarDate(v){
  document.getElementById('medicalDate').value=v;refreshMedicalDateButton();closeMedicalCalendar();
 }
 
-/* ===== 物品列表：简单常购物品目录 ===== */
+/* ===== 物品列表：分类 + 照片 + 一键加入购物清单 ===== */
 const ITEM_LIST_KEY='liutai_recordbook_item_list_v1';
+const ITEM_LIST_CATEGORIES=['🧂 调料','🥙 食品','🛁 洗护用品','🧻 纸品','🧴 清洁用品','🧴 护肤品','✨ 其他'];
 let itemListEditId=null,itemListBuyId=null;
 
 function itemListGet(){
- try{const a=JSON.parse(localStorage.getItem(ITEM_LIST_KEY)||'[]');return Array.isArray(a)?a:[]}
- catch(e){return []}
+ try{
+  const a=JSON.parse(localStorage.getItem(ITEM_LIST_KEY)||'[]');
+  return Array.isArray(a)?a.map(x=>({...x,category:x.category||'✨ 其他',photo:x.photo||''})):[];
+ }catch(e){return []}
 }
 function itemListSave(a){localStorage.setItem(ITEM_LIST_KEY,JSON.stringify(a))}
-
 function itemListEnsureUI(){
  const tabs=document.querySelector('.tabs');
  if(tabs&&!document.getElementById('itemListTab')){
-  const b=document.createElement('button');
-  b.id='itemListTab'; b.className='tab';
+  const b=document.createElement('button');b.id='itemListTab';b.className='tab';
   b.innerHTML='<span style="font-size:25px;line-height:1">📦</span>物品列表';
-  b.onclick=function(){setFilter('itemList',b)};
-  tabs.appendChild(b);
+  b.onclick=function(){setFilter('itemList',b)};tabs.appendChild(b);
  }
  if(!document.getElementById('itemListFormModal')){
   document.body.insertAdjacentHTML('beforeend',`
-   <div id="itemListFormModal" class="modal"><div class="sheet">
+   <div id="itemListFormModal" class="modal"><div class="sheet" style="max-width:520px">
     <h2 style="margin-top:0">📦 <span id="itemListFormTitle">新增物品</span></h2>
-    <div class="field"><label>物品名称</label><input id="itemListName" placeholder="例如：酱油、糖、厕纸"></div>
+    <div class="field"><label>物品名称</label><input id="itemListName" placeholder="例如：酱油、牙膏、厕纸"></div>
+    <div class="field"><label>分类</label><select id="itemListCategory">${ITEM_LIST_CATEGORIES.map(x=>`<option value="${x}">${x}</option>`).join('')}</select></div>
+    <div class="field"><label>照片</label>
+      <label for="itemListPhoto" class="smallBtn" style="display:inline-flex;align-items:center;gap:6px;padding:9px 12px">📷 选择照片</label>
+      <input id="itemListPhoto" type="file" accept="image/*" style="display:none">
+      <div id="itemListPhotoStatus" class="note" style="margin-top:7px"></div>
+    </div>
     <div class="modalBtns"><button class="cancel" onclick="itemListCloseForm()">取消</button><button class="save" onclick="itemListSaveForm()">保存</button></div>
    </div></div>
-   <div id="itemListBuyModal" class="modal"><div class="sheet">
+   <div id="itemListBuyModal" class="modal"><div class="sheet" style="max-width:520px">
     <h2 style="margin-top:0">🛒 购买 <span id="itemListBuyName"></span></h2>
     <div class="field"><label>数量</label><input id="itemListBuyQty" type="number" min="1" step="1" inputmode="numeric" placeholder="例如：2"></div>
     <div class="modalBtns"><button class="cancel" onclick="itemListCloseBuy()">取消</button><button class="save" onclick="itemListConfirmBuy()">加入购物清单</button></div>
@@ -1804,24 +1810,22 @@ function itemListEnsureUI(){
  }
 }
 function itemListOpenForm(id=null){
- itemListEditId=id;
- const x=id?itemListGet().find(v=>v.id===id):null;
+ itemListEditId=id;const x=id?itemListGet().find(v=>v.id===id):null;
  $('itemListFormTitle').textContent=x?'编辑物品':'新增物品';
- $('itemListName').value=x?.name||'';
+ $('itemListName').value=x?.name||'';$('itemListCategory').value=x?.category||'✨ 其他';
+ $('itemListPhoto').value='';
+ $('itemListPhotoStatus').textContent=x?.photo?'📷 已有照片；不重新选择会保留原照片':'';
  $('itemListFormModal').classList.add('show');
 }
 function itemListCloseForm(){$('itemListFormModal').classList.remove('show')}
-function itemListSaveForm(){
- const name=$('itemListName').value.trim();
- if(!name){alert('请填写物品名称');return}
- let a=itemListGet();
- if(itemListEditId){
-  const i=a.findIndex(x=>x.id===itemListEditId);
-  if(i>=0)a[i]={...a[i],name};
- }else{
-  if(a.some(x=>kitchenNorm(x.name)===kitchenNorm(name))){alert('这个物品已经在列表里了 😊');return}
-  a.push({id:'itm'+Date.now()+Math.random().toString(36).slice(2,6),name,created:Date.now()});
- }
+async function itemListSaveForm(){
+ const name=$('itemListName').value.trim();if(!name){alert('请填写物品名称');return}
+ let a=itemListGet(),old=itemListEditId?a.find(x=>x.id===itemListEditId):null;
+ if(!old&&a.some(x=>kitchenNorm(x.name)===kitchenNorm(name))){alert('这个物品已经在列表里了 😊');return}
+ let photo=old?.photo||'',file=$('itemListPhoto').files?.[0];
+ if(file){try{photo=await compressShopPhoto(file)}catch(e){alert('照片读取失败，请重新选择');return}}
+ const o={id:itemListEditId||('itm'+Date.now()+Math.random().toString(36).slice(2,6)),name,category:$('itemListCategory').value,photo,created:old?.created||Date.now()};
+ if(old)a[a.findIndex(x=>x.id===itemListEditId)]=o;else a.push(o);
  itemListSave(a);itemListCloseForm();itemListRender();
 }
 function itemListDelete(id){
@@ -1831,18 +1835,16 @@ function itemListDelete(id){
 function itemListOpenBuy(id){
  const x=itemListGet().find(v=>v.id===id);if(!x)return;
  itemListBuyId=id;$('itemListBuyName').textContent=x.name;$('itemListBuyQty').value='';
- $('itemListBuyModal').classList.add('show');
- setTimeout(()=>$('itemListBuyQty')?.focus(),50);
+ $('itemListBuyModal').classList.add('show');setTimeout(()=>$('itemListBuyQty')?.focus(),50);
 }
 function itemListCloseBuy(){$('itemListBuyModal').classList.remove('show')}
 function itemListConfirmBuy(){
  const x=itemListGet().find(v=>v.id===itemListBuyId);if(!x)return;
- const q=Math.floor(Number($('itemListBuyQty').value));
- if(!Number.isFinite(q)||q<1){alert('请填写数量');return}
+ const q=Math.floor(Number($('itemListBuyQty').value));if(!Number.isFinite(q)||q<1){alert('请填写数量');return}
  const n=kitchenNorm(x.name);
  const existing=records.find(r=>r.category==='shopping'&&!r.customPageId&&!r.done&&kitchenNorm(r.title)===n);
- if(existing)existing.qty=q+'个';
- else records.push({id:'shop'+Date.now()+Math.random().toString(36).slice(2,6),category:'shopping',customPageId:null,title:x.name,qty:q+'个',notes:'',photo:'',done:false,source:'itemList',created:Date.now()});
+ if(existing){existing.qty=q+'个';if(x.photo)existing.photo=x.photo}
+ else records.push({id:'shop'+Date.now()+Math.random().toString(36).slice(2,6),category:'shopping',customPageId:null,title:x.name,qty:q+'个',notes:'',photo:x.photo||'',done:false,source:'itemList',created:Date.now()});
  saveAll();itemListCloseBuy();
  const b=[...document.querySelectorAll('.tab')].find(v=>(v.getAttribute('onclick')||'').includes("setFilter('shopping'"));
  setFilter('shopping',b||null);
@@ -1851,32 +1853,36 @@ function itemListRender(){
  if(currentFilter!=='itemList')return;
  const a=itemListGet();
  $('listTitle').textContent='📦 物品列表';
- $('count').textContent=a.length+' 项';
+ $('count').innerHTML=`<button class="smallBtn" style="padding:8px 12px;border-radius:12px;font-weight:700" onclick="itemListOpenForm()">＋ 新增物品</button>`;
  if($('pageSearchWrap'))$('pageSearchWrap').style.display='none';
  ['medicalActions','specialActions','shoppingActions','customActions','customDeleteActions','builtinCopyActions'].forEach(id=>{const e=$(id);if(e)e.style.display='none'});
  if($('genericAddBtn'))$('genericAddBtn').style.display='none';
- $('list').innerHTML=`
-  <div style="display:flex;justify-content:flex-end;margin-bottom:12px">
-   <button class="smallBtn" style="padding:9px 14px;border-radius:12px;font-weight:700" onclick="itemListOpenForm()">＋ 新增物品</button>
-  </div>
-  ${a.length?a.map(x=>`<div class="card medCompact">
+ const card=x=>`<div class="card medCompact">
    <div style="display:flex;align-items:center;gap:10px">
+    ${x.photo?`<img src="${x.photo}" onclick="itemListViewPhoto('${x.id}')" style="width:48px;height:48px;border-radius:12px;object-fit:cover;cursor:pointer;flex:0 0 auto">`:''}
     <div style="flex:1;min-width:0"><b>${esc(x.name)}</b></div>
     <button class="smallBtn" onclick="itemListOpenBuy('${x.id}')">🛒 购买</button>
     <div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'itm_${x.id}')">⋯</button>
      <div id="itm_${x.id}" class="moreMenu hidden"><button onclick="itemListOpenForm('${x.id}')">✏️ 编辑</button><button onclick="itemListDelete('${x.id}')">🗑️ 删除</button></div>
     </div>
-   </div></div>`).join(''):'<div class="note" style="padding:16px 2px">还没有物品。把平时常买的东西加进来，以后就不用重复写了 😊</div>'}`;
+   </div></div>`;
+ let body='';
+ ITEM_LIST_CATEGORIES.forEach(cat=>{
+  const items=a.filter(x=>x.category===cat);
+  if(items.length)body+=`<div style="font-weight:800;font-size:15px;margin:17px 4px 9px">${cat} <span class="count">${items.length}项</span></div>${items.map(card).join('')}`;
+ });
+ $('list').innerHTML=body||'<div class="note" style="padding:16px 2px">还没有物品。把平时常买的东西加进来，以后就不用重复写了 😊</div>';
  setTimeout(fitRecordsScrollArea,0);
 }
-
+function itemListViewPhoto(id){
+ const x=itemListGet().find(v=>v.id===id);if(!x?.photo)return;
+ $('photoViewerImg').src=x.photo;$('photoViewerModal').classList.add('show');
+}
 const itemListOriginalSetFilter=setFilter;
 setFilter=function(f,btn){
  if(f!=='itemList')return itemListOriginalSetFilter(f,btn);
- currentFilter=f;
- document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
- if(btn)btn.classList.add('active');
- itemListRender();
+ currentFilter=f;document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+ if(btn)btn.classList.add('active');itemListRender();
 };
 itemListEnsureUI();
 
