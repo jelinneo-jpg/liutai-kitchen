@@ -1772,13 +1772,13 @@ function selectMedicalCalendarDate(v){
 
 /* ===== 物品列表：分类 + 照片 + 一键加入购物清单 ===== */
 const ITEM_LIST_KEY='liutai_recordbook_item_list_v1';
-const ITEM_LIST_CATEGORIES=['🧂 调料','🥙 食品','🛁 洗护用品','🧻 纸品','🧴 清洁用品','🧴 护肤品','✨ 其他'];
+const ITEM_LIST_CATEGORIES=['🧂 调料','🥙 食品','🥤 饮料','🛁 洗护用品','🧻 纸品','🧴 清洁用品','🪞 护肤品','✨ 其他'];
 let itemListEditId=null,itemListBuyId=null;
 
 function itemListGet(){
  try{
   const a=JSON.parse(localStorage.getItem(ITEM_LIST_KEY)||'[]');
-  return Array.isArray(a)?a.map(x=>({...x,category:x.category||'✨ 其他',photo:x.photo||''})):[];
+  return Array.isArray(a)?a.map(x=>({...x,category:x.category==='🧴 护肤品'?'🪞 护肤品':(x.category||'✨ 其他'),photo:x.photo||''})):[];
  }catch(e){return []}
 }
 function itemListSave(a){localStorage.setItem(ITEM_LIST_KEY,JSON.stringify(a))}
