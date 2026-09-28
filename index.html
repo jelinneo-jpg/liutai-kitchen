@@ -1852,27 +1852,54 @@ function itemListConfirmBuy(){
 function itemListRender(){
  if(currentFilter!=='itemList')return;
  const a=itemListGet();
+ if(!window.itemListActiveCategory)window.itemListActiveCategory='全部';
  $('listTitle').textContent='📦 物品列表';
  $('count').innerHTML=`<button class="smallBtn" style="padding:8px 12px;border-radius:12px;font-weight:700" onclick="itemListOpenForm()">＋ 新增物品</button>`;
  if($('pageSearchWrap'))$('pageSearchWrap').style.display='none';
  ['medicalActions','specialActions','shoppingActions','customActions','customDeleteActions','builtinCopyActions'].forEach(id=>{const e=$(id);if(e)e.style.display='none'});
  if($('genericAddBtn'))$('genericAddBtn').style.display='none';
- const card=x=>`<div class="card medCompact">
+
+ const cats=['全部',...ITEM_LIST_CATEGORIES];
+ const active=window.itemListActiveCategory;
+ const shown=active==='全部'?a:a.filter(x=>x.category===active);
+
+ const card=x=>`<div class="card medCompact" style="margin-bottom:10px">
    <div style="display:flex;align-items:center;gap:10px">
-    ${x.photo?`<img src="${x.photo}" onclick="itemListViewPhoto('${x.id}')" style="width:48px;height:48px;border-radius:12px;object-fit:cover;cursor:pointer;flex:0 0 auto">`:''}
-    <div style="flex:1;min-width:0"><b>${esc(x.name)}</b></div>
+    ${x.photo?`<img src="${x.photo}" onclick="itemListViewPhoto('${x.id}')" style="width:58px;height:58px;border-radius:14px;object-fit:cover;cursor:pointer;flex:0 0 auto">`
+             :`<div style="width:58px;height:58px;border-radius:14px;background:#fff3e5;display:flex;align-items:center;justify-content:center;font-size:27px;flex:0 0 auto">📦</div>`}
+    <div style="flex:1;min-width:0">
+      <b style="display:block;font-size:16px;line-height:1.3;word-break:break-word">${esc(x.name)}</b>
+      ${active==='全部'?`<div style="font-size:12px;color:#8b7c6c;margin-top:5px">${esc(x.category||'✨ 其他')}</div>`:''}
+    </div>
     <button class="smallBtn" onclick="itemListOpenBuy('${x.id}')">🛒 购买</button>
     <div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'itm_${x.id}')">⋯</button>
      <div id="itm_${x.id}" class="moreMenu hidden"><button onclick="itemListOpenForm('${x.id}')">✏️ 编辑</button><button onclick="itemListDelete('${x.id}')">🗑️ 删除</button></div>
     </div>
    </div></div>`;
- let body='';
- ITEM_LIST_CATEGORIES.forEach(cat=>{
-  const items=a.filter(x=>x.category===cat);
-  if(items.length)body+=`<div style="font-weight:800;font-size:15px;margin:17px 4px 9px">${cat} <span class="count">${items.length}项</span></div>${items.map(card).join('')}`;
- });
- $('list').innerHTML=body||'<div class="note" style="padding:16px 2px">还没有物品。把平时常买的东西加进来，以后就不用重复写了 😊</div>';
+
+ const rail=cats.map(cat=>{
+   const on=cat===active;
+   const label=cat==='全部'?'🧺<br>全部':esc(cat).replace(' ','<br>');
+   return `<button onclick="itemListChooseCategory('${cat.replace(/'/g,"\\'")}')" style="
+      width:100%;border:${on?'1px solid #d99554':'0'};background:${on?'#fff2e4':'transparent'};
+      color:${on?'#a95e36':'#66594c'};border-radius:15px;padding:10px 3px;margin-bottom:5px;
+      font-weight:${on?'800':'500'};font-size:13px;line-height:1.35">${label}</button>`;
+ }).join('');
+
+ $('list').innerHTML=`
+  <div style="display:grid;grid-template-columns:88px minmax(0,1fr);gap:12px;align-items:start">
+    <div style="background:#fffdf8;border:1px solid rgba(226,210,188,.75);border-radius:20px;padding:8px 6px;position:sticky;top:0">
+      ${rail}
+    </div>
+    <div style="min-width:0">
+      ${shown.length?shown.map(card).join(''):'<div class="empty" style="padding:28px 10px">这个分类还没有物品</div>'}
+    </div>
+  </div>`;
  setTimeout(fitRecordsScrollArea,0);
+}
+function itemListChooseCategory(cat){
+ window.itemListActiveCategory=cat;
+ itemListRender();
 }
 function itemListViewPhoto(id){
  const x=itemListGet().find(v=>v.id===id);if(!x?.photo)return;
