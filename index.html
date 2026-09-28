@@ -715,15 +715,8 @@ document.addEventListener('click',()=>document.querySelectorAll('.moreMenu').for
 
 
 let customPages=JSON.parse(localStorage.getItem('myRecordCustomPages')||'[]');
-const CUSTOM_CLEANUP_KEY='myRecordCustomPages_cleanup_v35';
-if(!localStorage.getItem(CUSTOM_CLEANUP_KEY)){
-  const oldIds=new Set(customPages.map(p=>p.id));
-  records=records.filter(r=>!r.customPageId || !oldIds.has(r.customPageId));
-  customPages=[];
-  localStorage.setItem('myRecordCustomPages','[]');
-  localStorage.setItem(KEY,JSON.stringify(records));
-  localStorage.setItem(CUSTOM_CLEANUP_KEY,'1');
-}
+// 重要：启动时只读取现有资料，不自动清空 customPages，也不删除任何 records。
+// 页面/记录只会在用户主动按删除并确认后才删除。
 let specialType='birthday', editingSpecial=null, editingShopping=null, editingCustomRecord=null;
 
 function saveCustomPages(){localStorage.setItem('myRecordCustomPages',JSON.stringify(customPages))}
