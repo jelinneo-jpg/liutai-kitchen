@@ -6217,13 +6217,51 @@ function restoreIngredient(id) {
 function editTodayIngredient(id) {
   const all=getTodayIngredientsAll().map(normalizeIngredient);
   const x=all.find(v=>String(v.id)===String(id)); if(!x)return;
-  const name=prompt("编辑食材名称：", x.name); if(name===null)return;
-  const cleanName=name.trim(); if(!cleanName){alert("食材名称不能为空 ❤️");return;}
-  const qtyRaw=prompt(`编辑剩余数量（${x.unit}）：`, fmtQty(x.qty)); if(qtyRaw===null)return;
-  const qty=Number(qtyRaw); if(!(qty>=0)){alert("请输入正确的数量 ❤️");return;}
-  x.name=cleanName; x.qty=qty;
-  if(qty===0){x.status="done";x.finishedAt=new Date().toISOString();}else{x.status="active";delete x.finishedAt;}
-  saveTodayIngredientsAll(all); renderTodayIngredients();
+
+  const old=document.getElementById("ingredientEditOverlay");
+  if(old) old.remove();
+
+  const overlay=document.createElement("div");
+  overlay.id="ingredientEditOverlay";
+  overlay.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:20px;";
+  overlay.innerHTML=`
+    <div style="width:min(100%,420px);background:white;border-radius:22px;padding:20px;box-shadow:0 10px 35px rgba(0,0,0,.18);">
+      <h3 style="margin:0 0 16px;font-size:20px;">⚙️ 编辑食材</h3>
+      <label style="font-weight:bold;">食材名称</label>
+      <input id="editIngredientName" value="${escapeHTML(x.name)}">
+      <label style="font-weight:bold;">数量</label>
+      <input id="editIngredientQty" type="number" min="0" step="any" inputmode="decimal" value="${fmtQty(x.qty)}">
+      <label style="font-weight:bold;">单位</label>
+      <select id="editIngredientUnit">
+        ${["条","粒","只","包","盒","瓶","个","片","g","kg","ml","L"].map(u=>`<option value="${u}" ${x.unit===u?"selected":""}>${u}</option>`).join("")}
+      </select>
+      <label style="display:flex;align-items:center;gap:8px;margin:8px 0 18px;font-weight:bold;">
+        <input id="editIngredientExpiring" type="checkbox" ${x.expiring?"checked":""} style="width:auto;margin:0;">
+        ⚠️ 快过期
+      </label>
+      <div style="display:flex;gap:8px;">
+        <button type="button" onclick="document.getElementById('ingredientEditOverlay').remove()" style="flex:1;border:0;background:#eee;color:#8a4d3b;padding:12px;border-radius:14px;font-weight:bold;">取消</button>
+        <button type="button" onclick="saveIngredientEdit('${x.id}')" style="flex:1;border:0;background:#e69765;color:white;padding:12px;border-radius:14px;font-weight:bold;">保存</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function saveIngredientEdit(id) {
+  const all=getTodayIngredientsAll().map(normalizeIngredient);
+  const x=all.find(v=>String(v.id)===String(id)); if(!x)return;
+  const name=document.getElementById("editIngredientName");
+  const qty=document.getElementById("editIngredientQty");
+  const unit=document.getElementById("editIngredientUnit");
+  const expiring=document.getElementById("editIngredientExpiring");
+  if(name && name.value.trim()) x.name=name.value.trim();
+  if(qty && qty.value!=="" && !isNaN(Number(qty.value))) x.qty=Math.max(0,Number(qty.value));
+  if(unit) x.unit=unit.value;
+  if(expiring) x.expiring=expiring.checked;
+  saveTodayIngredientsAll(all);
+  const overlay=document.getElementById("ingredientEditOverlay");
+  if(overlay) overlay.remove();
+  renderTodayIngredients();
 }
 function toggleIngredientSettings(id) {
   const menu=document.getElementById("ingredientSettings-"+id);
@@ -6231,7 +6269,14 @@ function toggleIngredientSettings(id) {
   document.querySelectorAll(".ingredient-settings-menu").forEach(function(m){if(m!==menu)m.classList.add("hidden");});
   menu.classList.toggle("hidden");
 }
-function deleteTodayIngredient(id) { saveTodayIngredientsAll(getTodayIngredientsAll().filter(x=>String(x.id)!==String(id))); renderTodayIngredients(); }
+function deleteTodayIngredient(id) {
+  const all=getTodayIngredientsAll().map(normalizeIngredient);
+  const x=all.find(v=>String(v.id)===String(id));
+  const name=x&&x.name ? `「${x.name}」` : "这个食材";
+  if(!confirm(`确定要删除${name}吗？\n\n删除后将无法恢复。`)) return;
+  saveTodayIngredientsAll(all.filter(v=>String(v.id)!==String(id)));
+  renderTodayIngredients();
+}
 function renderTodayIngredients() {
   const box=document.getElementById("todayIngredientList"); if(!box)return;
   const dateBox=document.getElementById("ingredientTodayDate"); if(dateBox) dateBox.textContent="家里现在有的食材 · 用了会自动扣减";
