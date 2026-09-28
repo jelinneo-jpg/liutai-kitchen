@@ -1283,6 +1283,15 @@ function renderPageOrderSettings(){
    </div>`).join('');
 }
 
+function restoreSavedPageOrder(){
+  try{
+    renderCustomTabs();
+    applyPageOrder();
+  }catch(e){}
+}
+window.addEventListener('load',()=>setTimeout(restoreSavedPageOrder,0));
+window.addEventListener('pageshow',()=>setTimeout(restoreSavedPageOrder,0));
+
 function openSettings(){renderPageOrderSettings();$('settingsModal').classList.add('show')}
 function closeSettings(){$('settingsModal').classList.remove('show')}
 function exportData(){
