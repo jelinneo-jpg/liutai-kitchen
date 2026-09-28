@@ -5944,129 +5944,109 @@ async function insertKitchenRows(
 
 
 async function importKitchenData(input) {
-
-  const file =
-    input &&
-    input.files
-      ? input.files[0]
-      : null;
-
-
-  if (!file) {
-    return;
-  }
-
-
   try {
+    const input = input;
+    const file = input && input.target ? input.target.files?.[0] : input?.files?.[0];
+    if (!file) return;
 
-    const text =
-      await file.text();
+    const text = await file.text();
+    const data = JSON.parse(text);
 
-
-    const backup =
-      JSON.parse(text);
-
-
-    if (
-      !backup ||
-      !Array.isArray(
-        backup.family_foods
-      ) ||
-      !Array.isArray(
-        backup.family_recipes
-      ) ||
-      !Array.isArray(
-        backup.family_orders
-      )
-    ) {
-
-      throw new Error(
-        "这个文件不是有效的「刘太厨房」备份文件。"
-      );
-
-    }
-
-
-    const confirmed =
-      confirm(
-        "确定要导入这个备份吗？\n\n" +
-        "目前数据库里的食物、食谱和点菜记录会被备份文件取代。\n\n" +
-        "建议先按「导出资料」保存目前资料。"
-      );
-
-
-    if (!confirmed) {
-
-      input.value = "";
-
+    if (!data || data.app !== "刘太厨房") {
+      alert("这不是刘太厨房的备份文件 ❤️");
       return;
-
     }
 
+    const foodsToRestore = Array.isArray(data.family_foods) ? data.family_foods : [];
+    const recipesToRestore = Array.isArray(data.family_recipes) ? data.family_recipes : [];
+    const ordersToRestore = Array.isArray(data.family_orders) ? data.family_orders : [];
+    const ingredientsToRestore = Array.isArray(data.today_ingredients) ? data.today_ingredients : [];
 
-    await deleteKitchenTableRows(
-      "family_orders"
-    );
-
-    await deleteKitchenTableRows(
-      "family_recipes"
-    );
-
-    await deleteKitchenTableRows(
-      "family_foods"
-    );
-
-
-    await insertKitchenRows(
-      "family_foods",
-      backup.family_foods
-    );
-
-    await insertKitchenRows(
-      "family_recipes",
-      backup.family_recipes
-    );
-
-    await insertKitchenRows(
-      "family_orders",
-      backup.family_orders
-    );
-
-    if (Array.isArray(backup.today_ingredients)) {
-      saveTodayIngredientsAll(backup.today_ingredients);
+    if (!confirm(
+      "安全恢复模式 ❤️\\n\\n" +
+      "只会补回备份里的资料，不会先清空数据库。\\n" +
+      "现有菜单、食谱、点菜记录和我的食材都会保留。\\n\\n" +
+      "确定继续吗？"
+    )) {
+      if (input && input.target) input.target.value = "";
+      else if (input) input.value = "";
+      return;
     }
 
+    // Read current rows first, then insert only IDs that do not already exist.
+    async function fetchRows(table) {
+      const r = await supabaseFetch(table + "?select=*", { method: "GET" });
+      const raw = await r.text();
+      if (!r.ok) throw new Error(raw || ("读取 " + table + " 失败"));
+      return raw ? JSON.parse(raw) : [];
+    }
+
+    async function insertMissing(table, backupRows) {
+      if (!backupRows.length) return 0;
+      const currentRows = await fetchRows(table);
+      const ids = new Set(currentRows.map(x => String(x.id)));
+      const missing = backupRows.filter(x => x && x.id != null && !ids.has(String(x.id)));
+      if (!missing.length) return 0;
+      const r = await supabaseFetch(table, {
+        method: "POST",
+        headers: { "Prefer": "return=minimal" },
+        body: JSON.stringify(missing)
+      });
+      const raw = await r.text();
+      if (!r.ok) throw new Error(raw || ("补回 " + table + " 失败"));
+      return missing.length;
+    }
+
+    const foodAdded = await insertMissing("/family_foods", foodsToRestore);
+    const recipeAdded = await insertMissing("/family_recipes", recipesToRestore);
+    const orderAdded = await insertMissing("/family_orders", ordersToRestore);
+
+    // Ingredients are synced separately; preserve current cloud data and add only absent IDs.
+    let ingredientAdded = 0;
+    if (ingredientsToRestore.length) {
+      try {
+        const currentIngredients = await fetchRows(TODAY_INGREDIENTS_TABLE);
+        const ids = new Set(currentIngredients.map(x => String(x.id)));
+        const missingIngredients = ingredientsToRestore
+          .map(normalizeIngredient)
+          .filter(x => x && x.id != null && !ids.has(String(x.id)))
+          .map(ingredientToSupabaseRow);
+        if (missingIngredients.length) {
+          const r = await supabaseFetch(TODAY_INGREDIENTS_TABLE, {
+            method: "POST",
+            headers: { "Prefer": "return=minimal" },
+            body: JSON.stringify(missingIngredients)
+          });
+          const raw = await r.text();
+          if (!r.ok) throw new Error(raw || "补回食材失败");
+          ingredientAdded = missingIngredients.length;
+        }
+      } catch (ingredientError) {
+        console.warn("食材安全恢复跳过：", ingredientError);
+      }
+    }
 
     await loadFoods();
-
     await loadRecipes();
-
     await loadTodayOrders();
-
-
-    alert(
-      "资料导入成功 ❤️"
-    );
-
-  }
-
-  catch (error) {
+    if (typeof syncTodayIngredientsFromSupabase === "function") await syncTodayIngredientsFromSupabase();
 
     alert(
-      "导入失败 😢\n\n" +
-      (error.message || error)
+      "安全恢复完成 ❤️\\n\\n" +
+      "菜单补回：" + foodAdded + " 项\\n" +
+      "食谱补回：" + recipeAdded + " 份\\n" +
+      "点菜记录补回：" + orderAdded + " 条\\n" +
+      "我的食材补回：" + ingredientAdded + " 项\\n\\n" +
+      "原有资料没有先被清空。"
     );
-
+  } catch (err) {
+    console.error(err);
+    alert("安全恢复失败：\\n" + (err?.message || err));
+  } finally {
+    const input = input;
+    if (input && input.target) input.target.value = "";
+    else if (input && "value" in input) input.value = "";
   }
-
-  finally {
-
-    if (input) {
-      input.value = "";
-    }
-
-  }
-
 }
 
 
@@ -6217,27 +6197,25 @@ function restoreIngredient(id) {
 function editTodayIngredient(id) {
   const all=getTodayIngredientsAll().map(normalizeIngredient);
   const x=all.find(v=>String(v.id)===String(id)); if(!x)return;
-
-  const old=document.getElementById("ingredientEditOverlay");
-  if(old) old.remove();
+  const old=document.getElementById("ingredientEditOverlay"); if(old) old.remove();
 
   const overlay=document.createElement("div");
   overlay.id="ingredientEditOverlay";
-  overlay.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;padding:20px;";
+  overlay.style.cssText="position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.30);display:flex;align-items:center;justify-content:center;padding:18px;";
   overlay.innerHTML=`
-    <div style="width:min(100%,420px);background:white;border-radius:22px;padding:20px;box-shadow:0 10px 35px rgba(0,0,0,.18);">
-      <h3 style="margin:0 0 16px;font-size:20px;">⚙️ 编辑食材</h3>
-      <label style="font-weight:bold;">食材名称</label>
+    <div style="width:min(100%,420px);background:#fff;border-radius:22px;padding:20px;box-shadow:0 12px 35px rgba(0,0,0,.20);">
+      <h3 style="margin:0 0 16px;font-size:20px;">✏️ 编辑食材</h3>
+      <label style="display:block;font-weight:bold;">食材名称</label>
       <input id="editIngredientName" value="${escapeHTML(x.name)}">
-      <label style="font-weight:bold;">数量</label>
+      <label style="display:block;font-weight:bold;">剩余数量</label>
       <input id="editIngredientQty" type="number" min="0" step="any" inputmode="decimal" value="${fmtQty(x.qty)}">
-      <label style="font-weight:bold;">单位</label>
+      <label style="display:block;font-weight:bold;">单位</label>
       <select id="editIngredientUnit">
         ${["条","粒","只","包","盒","瓶","个","片","g","kg","ml","L"].map(u=>`<option value="${u}" ${x.unit===u?"selected":""}>${u}</option>`).join("")}
       </select>
-      <label style="display:flex;align-items:center;gap:8px;margin:8px 0 18px;font-weight:bold;">
-        <input id="editIngredientExpiring" type="checkbox" ${x.expiring?"checked":""} style="width:auto;margin:0;">
-        ⚠️ 快过期
+      <label style="display:flex;align-items:center;gap:9px;margin:7px 0 18px;font-weight:bold;cursor:pointer;">
+        <input id="editIngredientExpiring" type="checkbox" ${x.expiring?"checked":""} style="width:20px;height:20px;margin:0;">
+        <span>⚠️ 快过期</span>
       </label>
       <div style="display:flex;gap:8px;">
         <button type="button" onclick="document.getElementById('ingredientEditOverlay').remove()" style="flex:1;border:0;background:#eee;color:#8a4d3b;padding:12px;border-radius:14px;font-weight:bold;">取消</button>
@@ -6250,17 +6228,17 @@ function editTodayIngredient(id) {
 function saveIngredientEdit(id) {
   const all=getTodayIngredientsAll().map(normalizeIngredient);
   const x=all.find(v=>String(v.id)===String(id)); if(!x)return;
-  const name=document.getElementById("editIngredientName");
-  const qty=document.getElementById("editIngredientQty");
-  const unit=document.getElementById("editIngredientUnit");
-  const expiring=document.getElementById("editIngredientExpiring");
-  if(name && name.value.trim()) x.name=name.value.trim();
-  if(qty && qty.value!=="" && !isNaN(Number(qty.value))) x.qty=Math.max(0,Number(qty.value));
-  if(unit) x.unit=unit.value;
-  if(expiring) x.expiring=expiring.checked;
+  const name=document.getElementById("editIngredientName").value.trim();
+  const qty=Number(document.getElementById("editIngredientQty").value);
+  if(!name){alert("食材名称不能为空 ❤️");return;}
+  if(!(qty>=0)){alert("请输入正确的数量 ❤️");return;}
+  x.name=name;
+  x.qty=qty;
+  x.unit=document.getElementById("editIngredientUnit").value;
+  x.expiring=document.getElementById("editIngredientExpiring").checked;
+  if(qty===0){x.status="done";x.finishedAt=new Date().toISOString();}else{x.status="active";delete x.finishedAt;}
   saveTodayIngredientsAll(all);
-  const overlay=document.getElementById("ingredientEditOverlay");
-  if(overlay) overlay.remove();
+  document.getElementById("ingredientEditOverlay").remove();
   renderTodayIngredients();
 }
 function toggleIngredientSettings(id) {
