@@ -1829,8 +1829,12 @@ function itemListEnsureUI(){
     <div class="field"><label>物品名称</label><input id="itemListName" placeholder="例如：酱油、牙膏、厕纸"></div>
     <div class="field"><label>分类</label><select id="itemListCategory">${ITEM_LIST_CATEGORIES.map(x=>`<option value="${x}">${x}</option>`).join('')}</select></div>
     <div class="field"><label>照片</label>
-      <label for="itemListPhoto" class="smallBtn" style="display:inline-flex;align-items:center;gap:6px;padding:9px 12px">📷 选择照片</label>
-      <input id="itemListPhoto" type="file" accept="image/*" style="display:none">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <label class="smallBtn" for="itemListCamera" style="display:inline-flex;align-items:center;cursor:pointer">📷 拍照</label>
+      <label class="smallBtn" for="itemListPhoto" style="display:inline-flex;align-items:center;cursor:pointer">🖼️ 相册</label>
+    </div>
+    <div id="itemListPhotoPreview" style="margin-top:8px"></div>
+      <input id="itemListPhoto" type="file" accept="image/*" style="position:absolute;width:1px;height:1px;opacity:0"><input id="itemListCamera" type="file" accept="image/*" capture="environment" style="position:absolute;width:1px;height:1px;opacity:0">
       <div id="itemListPhotoStatus" class="note" style="margin-top:7px"></div>
     </div>
     <div class="modalBtns"><button class="cancel" onclick="itemListCloseForm()">取消</button><button class="save" onclick="itemListSaveForm()">保存</button></div>
@@ -1846,16 +1850,29 @@ function itemListOpenForm(id=null){
  itemListEditId=id;const x=id?itemListGet().find(v=>v.id===id):null;
  $('itemListFormTitle').textContent=x?'编辑物品':'新增物品';
  $('itemListName').value=x?.name||'';$('itemListCategory').value=x?.category||'✨ 其他';
- $('itemListPhoto').value='';
+ $('itemListPhoto').value='';$('itemListCamera').value='';
  $('itemListPhotoStatus').textContent=x?.photo?'📷 已有照片；不重新选择会保留原照片':'';
  $('itemListFormModal').classList.add('show');
 }
 function itemListCloseForm(){$('itemListFormModal').classList.remove('show')}
+async function itemListPreviewChosen(file){
+ const box=$('itemListPhotoPreview');if(!box)return;
+ if(!file){box.innerHTML='';return}
+ const u=URL.createObjectURL(file);
+ box.innerHTML=`<img src="${u}" style="width:74px;height:74px;object-fit:cover;border-radius:12px;border:1px solid #ead9c5">`;
+}
+$('itemListCamera')?.addEventListener('change',function(){
+ if(this.files?.[0]){$('itemListPhoto').value='';itemListPreviewChosen(this.files[0])}
+});
+$('itemListPhoto')?.addEventListener('change',function(){
+ if(this.files?.[0]){$('itemListCamera').value='';itemListPreviewChosen(this.files[0])}
+});
+
 async function itemListSaveForm(){
  const name=$('itemListName').value.trim();if(!name){alert('请填写物品名称');return}
  let a=itemListGet(),old=itemListEditId?a.find(x=>x.id===itemListEditId):null;
  if(!old&&a.some(x=>kitchenNorm(x.name)===kitchenNorm(name))){alert('这个物品已经在列表里了 😊');return}
- let photo=old?.photo||'',file=$('itemListPhoto').files?.[0];
+ let photo=old?.photo||'',file=$('itemListCamera').files?.[0]||$('itemListPhoto').files?.[0];
  if(file){try{photo=await compressShopPhoto(file)}catch(e){alert('照片读取失败，请重新选择');return}}
  const o={id:itemListEditId||('itm'+Date.now()+Math.random().toString(36).slice(2,6)),name,category:$('itemListCategory').value,photo,created:old?.created||Date.now()};
  if(old)a[a.findIndex(x=>x.id===itemListEditId)]=o;else a.push(o);
