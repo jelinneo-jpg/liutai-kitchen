@@ -593,7 +593,38 @@ const $=id=>document.getElementById(id);
 const today=()=>new Date().toISOString().slice(0,10);
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function label(cat){return {package:'🏥 医生配套',doctor:'🏥 医生记录',medical:'🏥 医疗',birthday:'🎂 生日',anniversary:'❤️ 纪念日',work:'💼 工作',life:'🏠 生活',other:'📝 其他'}[cat]||'📝 其他'}
-function saveAll(){localStorage.setItem(KEY,JSON.stringify(records))}
+const shoppingDeletedIds=new Set();
+function saveAll(options={}){
+  // 防止页面在背景停留较久后，用旧的 records 覆盖掉后来新增的未完成购物项目。
+  // 正常保存前，先把 localStorage 里仍存在、但当前内存漏掉的「未完成购物清单」补回来。
+  if(!options.replace){
+    try{
+      const latest=JSON.parse(localStorage.getItem(KEY)||'[]');
+      if(Array.isArray(latest)){
+        const currentIds=new Set(records.map(r=>String(r.id)));
+        latest.forEach(r=>{
+          if(r && r.category==='shopping' && !r.customPageId && !r.done &&
+             !currentIds.has(String(r.id)) && !shoppingDeletedIds.has(String(r.id))){
+            records.push(r);
+            currentIds.add(String(r.id));
+          }
+        });
+      }
+    }catch(e){console.warn('购物清单保护同步失败',e)}
+  }
+  localStorage.setItem(KEY,JSON.stringify(records));
+}
+
+window.addEventListener('storage',e=>{
+  if(e.key!==KEY || !e.newValue)return;
+  try{
+    const latest=JSON.parse(e.newValue);
+    if(Array.isArray(latest)){
+      records=latest;
+      render();
+    }
+  }catch(err){}
+});
 
 function syncMedicalCopySectionMascot(cp,layout){
  if(!cp || layout!=='medical')return;
@@ -1018,7 +1049,7 @@ function sendSelectedShoppingWhatsApp(){
 }
 
 function toggleShopping(id){const r=records.find(x=>x.id===id);if(r){r.done=!r.done;saveAll();render()}}
-function deleteShopping(id){if(confirm('确定删除这个物品吗？')){records=records.filter(x=>x.id!==id);saveAll();render()}}
+function deleteShopping(id){if(confirm('确定删除这个物品吗？')){shoppingDeletedIds.add(String(id));records=records.filter(x=>x.id!==id);saveAll();render()}}
 function deleteAllCompletedShopping(){
  const pageId=activeCustomPageId();
  const completed=records.filter(r=>r.category==='shopping'&&r.done&&((pageId&&r.customPageId===pageId)||(!pageId&&!r.customPageId)));
@@ -1403,7 +1434,7 @@ function exportData(){
 }
 function importData(e){
  const f=e.target.files[0];if(!f)return;const reader=new FileReader();
- reader.onload=()=>{try{const d=JSON.parse(reader.result);const incoming=Array.isArray(d)?d:d.records;if(!Array.isArray(incoming))throw 0;if(confirm('导入会替换目前的记录，确定继续吗？')){records=incoming;saveAll();render();closeSettings();alert('导入完成');}}catch{alert('这个备份文件无法读取。')}e.target.value=''};
+ reader.onload=()=>{try{const d=JSON.parse(reader.result);const incoming=Array.isArray(d)?d:d.records;if(!Array.isArray(incoming))throw 0;if(confirm('导入会替换目前的记录，确定继续吗？')){records=incoming;shoppingDeletedIds.clear();saveAll({replace:true});render();closeSettings();alert('导入完成');}}catch{alert('这个备份文件无法读取。')}e.target.value=''};
  reader.readAsText(f);
 }
 window.addEventListener('click',e=>{if(e.target===$('formModal'))closeForm();if(e.target===$('settingsModal'))closeSettings()});
