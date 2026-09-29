@@ -1835,7 +1835,7 @@ function itemListEnsureUI(){
    </div></div>
    <div id="itemListBuyModal" class="modal"><div class="sheet" style="max-width:520px">
     <h2 style="margin-top:0">🛒 购买 <span id="itemListBuyName"></span></h2>
-    <div class="field"><label>数量</label><input id="itemListBuyQty" type="number" min="1" step="1" inputmode="numeric" placeholder="例如：2"></div>
+    <div class="field"><label>数量</label><input id="itemListBuyQty" type="number" min="1" step="1" inputmode="numeric" placeholder="例如：2" value="1"></div>
     <div class="modalBtns"><button class="cancel" onclick="itemListCloseBuy()">取消</button><button class="save" onclick="itemListConfirmBuy()">加入购物清单</button></div>
    </div></div>`);
  }
@@ -1865,7 +1865,7 @@ function itemListDelete(id){
 }
 function itemListOpenBuy(id){
  const x=itemListGet().find(v=>v.id===id);if(!x)return;
- itemListBuyId=id;$('itemListBuyName').textContent=x.name;$('itemListBuyQty').value='';
+ itemListBuyId=id;$('itemListBuyName').textContent=x.name;$('itemListBuyQty').value='1';
  $('itemListBuyModal').classList.add('show');setTimeout(()=>$('itemListBuyQty')?.focus(),50);
 }
 function itemListCloseBuy(){$('itemListBuyModal').classList.remove('show')}
