@@ -591,6 +591,46 @@ let records=JSON.parse(localStorage.getItem(KEY)||'[]');
 let currentFilter='all';
 const $=id=>document.getElementById(id);
 const today=()=>new Date().toISOString().slice(0,10);
+const PHOTO_DB='liutai_recordbook_photos_v1',PHOTO_STORE='photos';
+function photoDB(){
+ return new Promise((resolve,reject)=>{
+  const q=indexedDB.open(PHOTO_DB,1);
+  q.onupgradeneeded=()=>{if(!q.result.objectStoreNames.contains(PHOTO_STORE))q.result.createObjectStore(PHOTO_STORE)};
+  q.onsuccess=()=>resolve(q.result);q.onerror=()=>reject(q.error);
+ });
+}
+async function photoPut(id,data){
+ const db=await photoDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(PHOTO_STORE,'readwrite');tx.objectStore(PHOTO_STORE).put(data,id);
+  tx.oncomplete=()=>{db.close();resolve(id)};tx.onerror=()=>{db.close();reject(tx.error)};
+ });
+}
+async function photoGet(id){
+ if(!id)return '';
+ const db=await photoDB();
+ return new Promise((resolve,reject)=>{
+  const q=db.transaction(PHOTO_STORE,'readonly').objectStore(PHOTO_STORE).get(id);
+  q.onsuccess=()=>{db.close();resolve(q.result||'')};q.onerror=()=>{db.close();reject(q.error)};
+ });
+}
+async function photoDelete(id){
+ if(!id)return;
+ const db=await photoDB();
+ return new Promise((resolve,reject)=>{
+  const tx=db.transaction(PHOTO_STORE,'readwrite');tx.objectStore(PHOTO_STORE).delete(id);
+  tx.oncomplete=()=>{db.close();resolve()};tx.onerror=()=>{db.close();reject(tx.error)};
+ });
+}
+async function migrateInlinePhoto(obj,prefix='p'){
+ if(!obj)return obj;
+ if(obj.photo && String(obj.photo).startsWith('data:image/')){
+  const id=obj.photoId||(`${prefix}_${obj.id||Date.now()}_${Math.random().toString(36).slice(2,7)}`);
+  await photoPut(id,obj.photo);obj.photoId=id;obj.photo='';
+ }
+ return obj;
+}
+
 function esc(s=''){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 function label(cat){return {package:'🏥 医生配套',doctor:'🏥 医生记录',medical:'🏥 医疗',birthday:'🎂 生日',anniversary:'❤️ 纪念日',work:'💼 工作',life:'🏠 生活',other:'📝 其他'}[cat]||'📝 其他'}
 const shoppingDeletedIds=new Set();
@@ -962,7 +1002,7 @@ function openShoppingForm(id=null){
  editingShopping=id;const r=id?records.find(x=>x.id===id):null;
  $('shopTitle').value=r?.title||'';$('shopQty').value=r?.qty||'';$('shopNotes').value=r?.notes||'';
  $('shopPhoto').value='';
- $('shopPhotoStatus').textContent=r?.photo?'📷 已有照片；不重新选择会保留原照片':'';
+ $('shopPhotoStatus').textContent=(r?.photoId||r?.photo)?'📷 已有照片；不重新选择会保留原照片':'';
  $('shoppingModal').classList.add('show');
 }
 function closeShoppingForm(){$('shoppingModal').classList.remove('show')}
@@ -986,18 +1026,28 @@ function compressShopPhoto(file){
 async function saveShopping(){
  const title=$('shopTitle').value.trim();if(!title){alert('请填写物品');return}
  const old=editingShopping?records.find(x=>x.id===editingShopping):null;
- let photo=old?.photo||'';
+ const id=editingShopping||('sh'+Date.now());
+ let photoId=old?.photoId||'';
+ if(old?.photo&&!photoId){try{await migrateInlinePhoto(old,'shop');photoId=old.photoId||''}catch(e){}}
  const file=$('shopPhoto').files?.[0];
  if(file){
-  try{photo=await compressShopPhoto(file)}catch(e){alert('照片读取失败，请重新选择');return}
+  try{
+   const data=await compressShopPhoto(file);
+   photoId=photoId||('shopphoto_'+id);
+   await photoPut(photoId,data);
+  }catch(e){alert('照片储存失败，请再试一次');return}
  }
- const o={id:editingShopping||('sh'+Date.now()),category:'shopping',customPageId:old?.customPageId||activeCustomPageId(),title,qty:$('shopQty').value.trim(),notes:$('shopNotes').value.trim(),photo,done:old?.done||false,created:old?.created||Date.now()};
+ const o={id,category:'shopping',customPageId:old?.customPageId||activeCustomPageId(),title,qty:$('shopQty').value.trim(),notes:$('shopNotes').value.trim(),photo:'',photoId,done:old?.done||false,created:old?.created||Date.now()};
  if(old){records[records.findIndex(x=>x.id===editingShopping)]=o}else records.push(o);
- saveAll();closeShoppingForm();setFilter(currentFilter,null);
+ try{saveAll()}catch(e){alert('记录储存失败，请再试一次');return}
+ closeShoppingForm();setFilter(currentFilter,null);
 }
-function openPhotoViewer(id){
- const r=records.find(x=>x.id===id);if(!r?.photo)return;
- $('photoViewerImg').src=r.photo;$('photoViewerModal').classList.add('show');
+async function openPhotoViewer(id){
+ const r=records.find(x=>x.id===id);if(!r)return;
+ let p=r.photo||'';
+ if(!p&&r.photoId){try{p=await photoGet(r.photoId)}catch(e){}}
+ if(!p)return;
+ $('photoViewerImg').src=p;$('photoViewerModal').classList.add('show');
 }
 function closePhotoViewer(){$('photoViewerModal').classList.remove('show');$('photoViewerImg').src=''}
 
@@ -1248,7 +1298,7 @@ function render(){
    <div style="display:flex;gap:10px;align-items:flex-start">
     <button onclick="toggleShopping('${r.id}')" style="border:0;background:transparent;font-size:22px;padding:0">${r.done?'☑️':'☐'}</button>
     <div style="flex:1"><b>${esc(r.title)}${r.qty?`&nbsp;&nbsp;${esc(r.qty)}`:''}</b>${atHome?`<span style="display:inline-block;margin-left:8px;padding:3px 7px;border-radius:999px;background:#e8f3e8;color:#527052;font-size:11px;font-weight:700;">家里有 ✓</span>`:''}${r.notes?`<div class="note">${esc(r.notes)}</div>`:''}</div>
-    ${r.photo?`<button class="smallBtn" style="padding:6px 8px" onclick="openPhotoViewer('${r.id}')">📷</button>`:''}
+    ${(r.photo||r.photoId)?`<button class="smallBtn" style="padding:6px 8px" onclick="openPhotoViewer('${r.id}')">📷</button>`:''}
     ${r.done
       ? `<button class="smallBtn" style="padding:5px 9px;border-radius:10px;font-size:18px;line-height:1" onclick="deleteShopping('${r.id}')">×</button>`
       : `<div class="moreWrap"><button class="moreBtn" onclick="toggleMore(event,'more_${r.id}')">⋯</button><div id="more_${r.id}" class="moreMenu hidden"><button onclick="openShoppingForm('${r.id}')">✏️ 编辑</button><button onclick="deleteShopping('${r.id}')">🗑️ 删除</button></div></div>`}
@@ -1428,13 +1478,28 @@ window.addEventListener('pageshow',()=>setTimeout(restoreSavedPageOrder,0));
 
 function openSettings(){renderPageOrderSettings();$('settingsModal').classList.add('show')}
 function closeSettings(){$('settingsModal').classList.remove('show')}
-function exportData(){
- const blob=new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),records},null,2)],{type:'application/json'});
- const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='我的记录本备份_'+today()+'.json';a.click();URL.revokeObjectURL(a.href);
+async function exportData(){
+ try{
+  const itemList=itemListGet();
+  const ids=[...new Set([...records,...itemList].map(x=>x?.photoId).filter(Boolean))];
+  const photos={};
+  for(const id of ids){const p=await photoGet(id);if(p)photos[id]=p}
+  const blob=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),records,itemList,photos},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='我的记录本备份_'+today()+'.json';a.click();URL.revokeObjectURL(a.href);
+ }catch(e){alert('导出备份失败，请再试一次')}
 }
 function importData(e){
  const f=e.target.files[0];if(!f)return;const reader=new FileReader();
- reader.onload=()=>{try{const d=JSON.parse(reader.result);const incoming=Array.isArray(d)?d:d.records;if(!Array.isArray(incoming))throw 0;if(confirm('导入会替换目前的记录，确定继续吗？')){records=incoming;shoppingDeletedIds.clear();saveAll({replace:true});render();closeSettings();alert('导入完成');}}catch{alert('这个备份文件无法读取。')}e.target.value=''};
+ reader.onload=async()=>{try{
+  const d=JSON.parse(reader.result),incoming=Array.isArray(d)?d:d.records;
+  if(!Array.isArray(incoming))throw 0;
+  if(confirm('导入会替换目前的记录，确定继续吗？')){
+   records=incoming;shoppingDeletedIds.clear();
+   if(Array.isArray(d.itemList))itemListSave(d.itemList);
+   if(d.photos&&typeof d.photos==='object'){for(const [id,p] of Object.entries(d.photos)){await photoPut(id,p)}}
+   saveAll({replace:true});render();closeSettings();alert('导入完成');
+  }
+ }catch(err){alert('这个备份文件无法读取。')}e.target.value=''};
  reader.readAsText(f);
 }
 window.addEventListener('click',e=>{if(e.target===$('formModal'))closeForm();if(e.target===$('settingsModal'))closeSettings()});
@@ -1811,7 +1876,7 @@ let itemListMultiMode=false;
 function itemListGet(){
  try{
   const a=JSON.parse(localStorage.getItem(ITEM_LIST_KEY)||'[]');
-  return Array.isArray(a)?a.map(x=>({...x,category:x.category==='🧴 护肤品'?'🪞 护肤品':(x.category||'✨ 其他'),photo:x.photo||''})):[];
+  return Array.isArray(a)?a.map(x=>({...x,category:x.category==='🧴 护肤品'?'🪞 护肤品':(x.category||'✨ 其他'),photo:x.photo||'',photoId:x.photoId||''})):[];
  }catch(e){return []}
 }
 function itemListSave(a){localStorage.setItem(ITEM_LIST_KEY,JSON.stringify(a))}
@@ -1851,7 +1916,7 @@ function itemListOpenForm(id=null){
  $('itemListFormTitle').textContent=x?'编辑物品':'新增物品';
  $('itemListName').value=x?.name||'';$('itemListCategory').value=x?.category||'✨ 其他';
  $('itemListPhoto').value='';$('itemListCamera').value='';
- $('itemListPhotoStatus').textContent=x?.photo?'📷 已有照片；不重新选择会保留原照片':'';
+ $('itemListPhotoStatus').textContent=(x?.photoId||x?.photo)?'📷 已有照片；不重新选择会保留原照片':'';
  $('itemListFormModal').classList.add('show');
 }
 function itemListCloseForm(){$('itemListFormModal').classList.remove('show')}
@@ -1872,11 +1937,21 @@ async function itemListSaveForm(){
  const name=$('itemListName').value.trim();if(!name){alert('请填写物品名称');return}
  let a=itemListGet(),old=itemListEditId?a.find(x=>x.id===itemListEditId):null;
  if(!old&&a.some(x=>kitchenNorm(x.name)===kitchenNorm(name))){alert('这个物品已经在列表里了 😊');return}
- let photo=old?.photo||'',file=$('itemListCamera').files?.[0]||$('itemListPhoto').files?.[0];
- if(file){try{photo=await compressShopPhoto(file)}catch(e){alert('照片读取失败，请重新选择');return}}
- const o={id:itemListEditId||('itm'+Date.now()+Math.random().toString(36).slice(2,6)),name,category:$('itemListCategory').value,photo,created:old?.created||Date.now()};
+ const id=itemListEditId||('itm'+Date.now()+Math.random().toString(36).slice(2,6));
+ let photoId=old?.photoId||'';
+ if(old?.photo&&!photoId){try{await migrateInlinePhoto(old,'item');photoId=old.photoId||''}catch(e){}}
+ const file=$('itemListCamera').files?.[0]||$('itemListPhoto').files?.[0];
+ if(file){
+  try{
+   const data=await compressShopPhoto(file);
+   photoId=photoId||('itemphoto_'+id);
+   await photoPut(photoId,data);
+  }catch(e){alert('照片储存失败，请再试一次');return}
+ }
+ const o={id,name,category:$('itemListCategory').value,photo:'',photoId,created:old?.created||Date.now()};
  if(old)a[a.findIndex(x=>x.id===itemListEditId)]=o;else a.push(o);
- itemListSave(a);itemListCloseForm();itemListRender();
+ try{itemListSave(a)}catch(e){alert('物品资料储存失败，请再试一次');return}
+ itemListCloseForm();itemListRender();
 }
 function itemListDelete(id){
  if(!confirm('确定删除这个物品吗？'))return;
@@ -1893,8 +1968,8 @@ function itemListConfirmBuy(){
  const q=Math.floor(Number($('itemListBuyQty').value));if(!Number.isFinite(q)||q<1){alert('请填写数量');return}
  const n=kitchenNorm(x.name);
  const existing=records.find(r=>r.category==='shopping'&&!r.customPageId&&!r.done&&kitchenNorm(r.title)===n);
- if(existing){existing.qty=q+'个';if(x.photo)existing.photo=x.photo}
- else records.push({id:'shop'+Date.now()+Math.random().toString(36).slice(2,6),category:'shopping',customPageId:null,title:x.name,qty:q+'个',notes:'',photo:x.photo||'',done:false,source:'itemList',created:Date.now()});
+ if(existing){existing.qty=q+'个';if(x.photoId)existing.photoId=x.photoId;else if(x.photo)existing.photo=x.photo}
+ else records.push({id:'shop'+Date.now()+Math.random().toString(36).slice(2,6),category:'shopping',customPageId:null,title:x.name,qty:q+'个',notes:'',photo:'',photoId:x.photoId||'',done:false,source:'itemList',created:Date.now()});
  saveAll();itemListCloseBuy();itemListRender();alert('已加入购物清单');
 }
 function itemListRender(){
@@ -1921,7 +1996,7 @@ function itemListRender(){
     ${itemListMultiMode?`<button onclick="itemListToggleSelect('${x.id}')" aria-label="选择物品" style="width:28px;height:28px;border-radius:50%;border:2px solid ${selected?'#d58b45':'#cbbdad'};background:${selected?'#f3b86f':'#fff'};padding:0;font-size:17px;font-weight:800;flex:0 0 auto">${selected?'✓':''}</button>`:''}
     <div style="flex:1;min-width:0" ${itemListMultiMode?`onclick="itemListToggleSelect('${x.id}')" style="cursor:pointer"`:''}>
       <b style="font-size:16px;line-height:1.3;word-break:break-word">${esc(x.name)}</b>
-      ${x.photo?`<button onclick="event.stopPropagation();itemListViewPhoto('${x.id}')" aria-label="查看照片" style="border:0;background:transparent;padding:2px 5px;margin-left:5px;font-size:19px;vertical-align:middle">📷</button>`:''}
+      ${(x.photo||x.photoId)?`<button onclick="event.stopPropagation();itemListViewPhoto('${x.id}')" aria-label="查看照片" style="border:0;background:transparent;padding:2px 5px;margin-left:5px;font-size:19px;vertical-align:middle">📷</button>`:''}
       ${active==='全部'?`<div style="font-size:12px;color:#8b7c6c;margin-top:5px">${esc(x.category||'✨ 其他')}</div>`:''}
     </div>
     ${!itemListMultiMode?`<button class="smallBtn" onclick="itemListOpenBuy('${x.id}')">🛒 购买</button>
@@ -1969,7 +2044,7 @@ function itemListToggleSelect(id){
  const x=itemListGet().find(v=>String(v.id)===String(id));if(!x)return;
  const i=itemListOrder.findIndex(v=>String(v.id)===String(id));
  if(i>=0)itemListOrder.splice(i,1);
- else itemListOrder.push({id:x.id,name:x.name,qty:1,photo:x.photo||''});
+ else itemListOrder.push({id:x.id,name:x.name,qty:1,photo:'',photoId:x.photoId||''});
  itemListRender();
 }
 function itemListFinishMulti(){
@@ -2005,7 +2080,7 @@ function itemListRenderOrderPage(){
  const rows=itemListOrder.length?itemListOrder.map(x=>`
   <div class="card medCompact" style="margin-bottom:10px">
    <div style="display:flex;align-items:center;gap:9px">
-    ${x.photo?`<button onclick="itemListViewPhoto('${x.id}')" style="border:0;background:transparent;padding:2px;font-size:20px">📷</button>`:''}
+    ${(x.photo||x.photoId)?`<button onclick="itemListViewPhoto('${x.id}')" style="border:0;background:transparent;padding:2px;font-size:20px">📷</button>`:''}
     <b style="flex:1;min-width:0;word-break:break-word">${esc(x.name)}</b>
     <div style="display:flex;align-items:center;gap:5px">
      <button class="smallBtn" onclick="itemListChangeOrderQty('${x.id}',-1)">−</button>
@@ -2032,8 +2107,8 @@ function itemListConfirmOrder(){
  itemListOrder.forEach(x=>{
   const n=kitchenNorm(x.name);
   const existing=records.find(r=>r.category==='shopping'&&!r.customPageId&&!r.done&&kitchenNorm(r.title)===n);
-  if(existing){existing.qty=x.qty+'个';if(x.photo)existing.photo=x.photo}
-  else records.push({id:'shop'+Date.now()+Math.random().toString(36).slice(2,6),category:'shopping',customPageId:null,title:x.name,qty:x.qty+'个',notes:'',photo:x.photo||'',done:false,source:'itemList',created:Date.now()});
+  if(existing){existing.qty=x.qty+'个';if(x.photoId)existing.photoId=x.photoId;else if(x.photo)existing.photo=x.photo}
+  else records.push({id:'shop'+Date.now()+Math.random().toString(36).slice(2,6),category:'shopping',customPageId:null,title:x.name,qty:x.qty+'个',notes:'',photo:'',photoId:x.photoId||'',done:false,source:'itemList',created:Date.now()});
  });
  saveAll();
  itemListOrder=[];
@@ -2046,9 +2121,12 @@ function itemListChooseCategory(cat){
  window.itemListActiveCategory=cat;
  itemListRender();
 }
-function itemListViewPhoto(id){
- const x=itemListGet().find(v=>v.id===id);if(!x?.photo)return;
- $('photoViewerImg').src=x.photo;$('photoViewerModal').classList.add('show');
+async function itemListViewPhoto(id){
+ const x=itemListGet().find(v=>v.id===id);if(!x)return;
+ let p=x.photo||'';
+ if(!p&&x.photoId){try{p=await photoGet(x.photoId)}catch(e){}}
+ if(!p)return;
+ $('photoViewerImg').src=p;$('photoViewerModal').classList.add('show');
 }
 const itemListOriginalSetFilter=setFilter;
 setFilter=function(f,btn){
